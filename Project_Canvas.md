@@ -45,7 +45,7 @@ E-commerce customers struggle to find relevant products and make informed purcha
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Data Layer    │    │  Analysis Layer │    │   AI Layer      │
 │                 │    │                 │    │                 │
-│ • JSONL Storage │───▶│ • Pandas/NumPy │───▶│ • OpenAI API    │
+│ • JSONL Storage │───▶│ • Pandas/NumPy  │───▶│ • OpenAI API    │
 │ • Data Pipeline │    │ • Visualization │    │ • Groq API      │
 │ • Validation    │    │ • Statistics    │    │ • Google GenAI  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘

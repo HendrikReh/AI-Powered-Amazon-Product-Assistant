@@ -4,3 +4,6 @@
 # Cursor
 .cursorignore
 .cursorindexingignore
+.DS_Store
+/data/Electronics.jsonl
+/data/meta_Electronics.jsonl

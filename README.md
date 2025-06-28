@@ -80,7 +80,7 @@ AI-Powered-Amazon-Product-Assistant/
 │   ├── meta_Electronics.jsonl         # Raw product metadata (4.9GB)
 │   └── processed/
 │       ├── electronics_top1000_products.jsonl    # Processed products
-│       ├── electronics_top1000_reviews.jsonl     # Processed reviews
+│       ├── electronics_top1000_products_reviews.jsonl     # Processed reviews
 │       ├── electronics_rag_documents.jsonl       # RAG-optimized documents
 │       └── dataset_summary.json                  # Dataset statistics
 ├── notebooks/

@@ -49,9 +49,37 @@ with st.sidebar:
     )
     st.session_state.max_tokens = max_tokens
     
+    # Top-p slider
+    top_p = st.slider(
+        "Top-p (Nucleus Sampling)",
+        min_value=0.0,
+        max_value=1.0,
+        value=1.0,
+        step=0.05,
+        help="Controls diversity: lower values = more focused, higher values = more diverse"
+    )
+    st.session_state.top_p = top_p
+    
+    # Top-k slider
+    top_k = st.slider(
+        "Top-k",
+        min_value=1,
+        max_value=100,
+        value=40,
+        step=1,
+        help="Limits vocabulary to top k tokens (Google only)"
+    )
+    st.session_state.top_k = top_k
+    
     # Display current configuration
     st.divider()
-    st.caption(f"🎛️ Current Config: Temp={temperature}, Max Tokens={max_tokens}")
+    st.caption(f"🎛️ Config: Temp={temperature} | Tokens={max_tokens} | Top-p={top_p} | Top-k={top_k}")
+    
+    # Parameter support info
+    if provider == "Google":
+        st.caption("✅ All parameters supported")
+    else:
+        st.caption("⚠️ Top-k not supported by OpenAI/Groq")
 
 
 if st.session_state.provider == "OpenAI":
@@ -66,6 +94,8 @@ def run_llm(client, messages):
     # Get configuration from session state
     temperature = st.session_state.get('temperature', 0.7)
     max_tokens = st.session_state.get('max_tokens', 500)
+    top_p = st.session_state.get('top_p', 1.0)
+    top_k = st.session_state.get('top_k', 40)
     
     if st.session_state.provider == "Google":
         return client.models.generate_content(
@@ -73,15 +103,19 @@ def run_llm(client, messages):
             contents=[message["content"] for message in messages],
             config={
                 "temperature": temperature,
-                "max_output_tokens": max_tokens
+                "max_output_tokens": max_tokens,
+                "top_p": top_p,
+                "top_k": top_k
             }
         ).text
     else:
+        # OpenAI and Groq support top_p but not top_k
         return client.chat.completions.create(
             model=st.session_state.model_name,
             messages=messages,
             max_tokens=max_tokens,
-            temperature=temperature
+            temperature=temperature,
+            top_p=top_p
         ).choices[0].message.content
 
 

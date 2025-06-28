@@ -143,8 +143,9 @@ AI-Powered-Amazon-Product-Assistant/
 ├── 📄 pyproject.toml                                  # uv dependencies & config
 ├── 📄 Dockerfile                                      # Container deployment
 ├── 📄 Makefile                                        # Build automation
-├── 📄 Project_Canvas.md                               # Project roadmap & tasks
-├── 📄 CLAUDE.md                                       # AI assistant change log
+├── 📄 PROJECT_CANVAS.md                               # Project roadmap & tasks
+├── 📄 WEAVE_TRACING_GUIDE.md                          # LLM tracing & monitoring guide
+├── 📄 DOCKER_TTY_FIXES.md                             # Container deployment fixes
 └── 📄 README.md                                       # Project documentation
 ```
 
@@ -220,6 +221,37 @@ temporal_analysis(df_reviews)
    ```
 
 4. **Large File Handling**: The raw data files are large (25GB+). Ensure sufficient disk space and memory.
+
+## Documentation
+
+This project includes comprehensive documentation to help you understand and work with the system:
+
+### [PROJECT_CANVAS.md](PROJECT_CANVAS.md)
+**Project roadmap and task tracking**
+- Complete project overview and goals
+- Sprint 0 deliverables with detailed task breakdown
+- EDA findings and dataset analysis summary
+- Configuration features and tracing implementation status
+- Success criteria and architecture decisions
+
+### [WEAVE_TRACING_GUIDE.md](WEAVE_TRACING_GUIDE.md)
+**Comprehensive LLM tracing and monitoring guide**
+- Complete Weave integration implementation details
+- Configuration parameter tracking (temperature, max_tokens, top_p, top_k)
+- W&B dashboard setup and trace analysis
+- Provider-specific handling and error resilience
+- Performance monitoring and debugging techniques
+- Troubleshooting guide for common tracing issues
+
+### [DOCKER_TTY_FIXES.md](DOCKER_TTY_FIXES.md)
+**Containerized deployment compatibility guide**
+- Docker TTY issues and solutions for production deployment
+- Non-root user configuration and security best practices
+- Streamlit headless configuration for container environments
+- Weave tracing compatibility in containerized setups
+- Complete verification steps and troubleshooting
+
+These documents provide in-depth technical guidance beyond the quick start instructions in this README, covering advanced topics like monitoring, containerization, and project management.
 
 ## Data Sources & Citations
 

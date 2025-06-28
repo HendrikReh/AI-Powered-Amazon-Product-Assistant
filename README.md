@@ -146,6 +146,7 @@ AI-Powered-Amazon-Product-Assistant/
 ├── 📄 PROJECT_CANVAS.md                               # Project roadmap & tasks
 ├── 📄 WEAVE_TRACING_GUIDE.md                          # LLM tracing & monitoring guide
 ├── 📄 DOCKER_TTY_FIXES.md                             # Container deployment fixes
+├── 📄 CLAUDE.md                                       # AI assistant change log
 └── 📄 README.md                                       # Project documentation
 ```
 
@@ -250,6 +251,13 @@ This project includes comprehensive documentation to help you understand and wor
 - Streamlit headless configuration for container environments
 - Weave tracing compatibility in containerized setups
 - Complete verification steps and troubleshooting
+
+### [CLAUDE.md](CLAUDE.md)
+**AI assistant development log**
+- Detailed record of changes and improvements made by the AI assistant
+- Implementation decisions and technical explanations
+- Feature development timeline and reasoning
+- Code modifications and their rationale
 
 These documents provide in-depth technical guidance beyond the quick start instructions in this README, covering advanced topics like monitoring, containerization, and project management.
 

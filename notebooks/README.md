@@ -115,21 +115,21 @@ This directory contains Jupyter notebooks for data processing, analysis, and vis
 
 #### Comprehensive Analysis Results:
 
-##### 📈 **Dataset Statistics**:
+##### **Dataset Statistics**:
 - **Products**: 1,000 electronics items
 - **Reviews**: 20,000 customer reviews  
 - **Time Span**: 20 years (2003-2023)
 - **Review Range**: 3,453 to 178,239 reviews per product
 - **Average Rating**: 4.29/5.0 stars
 
-##### 🎯 **Key Insights Generated**:
+##### **Key Insights Generated**:
 - **Rating Distribution**: 68.2% five-star, 8.1% one-star reviews
 - **Price Analysis**: Median price $26.99, range $3.49-$1,175.35
 - **Category Depth**: Up to 7 hierarchical levels, 312 unique categories
 - **Temporal Patterns**: Tuesday most active day, January most active month
 - **Recent Activity**: 37.8% of reviews from 2020 onwards
 
-##### 📊 **Generated Visualizations**:
+##### **Generated Visualizations**:
 - Review distribution histograms
 - Price analysis scatter plots  
 - Category hierarchy treemaps
@@ -169,7 +169,7 @@ This notebook serves as the **definitive analysis reference** cited in:
 - **Test**: Content generation
 - **Validation**: API response structure
 
-##### ⚡ **Groq Llama**
+##### **Groq Llama**
 - **Model**: llama-3.3-70b-versatile  
 - **Test**: Chat completion
 - **Validation**: Response speed and quality

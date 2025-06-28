@@ -71,7 +71,7 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 ### Task 2 – Project Configuration ✅
 
 - **Added config sliders in Streamlit sidebar:**
-  - **Temperature**: 0.0-2.0 range (default: 0.7) - Controls response creativity/randomness
+  - **Temperature**: 0.0-2.0 range - Controls response creativity/randomness. **[Default** of 0.7 for OpenAI and Gemini! ***TODO:*** should be 1.0 for Gemini**]**
   - **Max Tokens**: 50-2000 range (default: 500) - Controls response length
 - **Multi-provider support**: Configuration applies to OpenAI, Groq, and Google models
 - **Real-time updates**: Settings take effect immediately for new messages

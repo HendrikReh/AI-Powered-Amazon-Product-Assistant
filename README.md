@@ -4,14 +4,16 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 
 **Course**: End-to-End AI Engineering Bootcamp ([Maven](https://maven.com/swirl-ai/end-to-end-ai-engineering))
 
-## 🚀 Features
+## Features
 
 - **Data Processing Pipeline**: Automated processing of large-scale Amazon product and review data
 - **Interactive Visualizations**: Comprehensive analysis dashboards with temporal trends, category insights, and rating patterns  
 - **RAG-Ready Dataset**: Processed data optimized for retrieval-augmented generation systems
-- **Streamlit UI**: User-friendly interface for product recommendations and insights
+- **Streamlit UI**: User-friendly interface with configurable LLM parameters (temperature, max tokens, top-p, top-k)
+- **Multi-Provider Support**: Compatible with OpenAI, Groq, and Google Gemini models
+- **Weave Tracing**: Optional LLM call tracking and performance monitoring via Weights & Biases
 
-## 📊 Dataset Overview
+## Dataset Overview
 
 **Source**: Amazon Reviews 2023 - Electronics Category
 - **Products**: 1,000 carefully selected electronics products
@@ -26,7 +28,7 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - Most active month: January (2,283 reviews)
 - Recent activity: 37.8% of reviews from 2020 onwards
 
-## 🛠 Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 - Python 3.12+
@@ -46,19 +48,37 @@ An end-to-end AI engineering project that builds an intelligent product recommen
    uv sync
    ```
 
-3. **Set up Jupyter kernel**
+3. **Configure environment variables**
+   ```bash
+   # Create .env file with your API keys
+   cp .env.example .env  # if available, or create manually
+   
+   # Required for chatbot functionality
+   echo "OPENAI_API_KEY=your_openai_key" >> .env
+   echo "GROQ_API_KEY=your_groq_key" >> .env  
+   echo "GOOGLE_API_KEY=your_google_key" >> .env
+   
+   # Optional for Weave tracing
+   echo "WANDB_API_KEY=your_wandb_key" >> .env
+   ```
+
+4. **Set up Jupyter kernel**
    ```bash
    uv run python -m ipykernel install --user --name ai-product-assistant
    ```
 
-4. **Run data processing** (if needed)
+5. **Run data processing** (if needed)
    ```bash
    uv run jupyter notebook notebooks/data_preprocessing.ipynb
    ```
 
-5. **Launch visualization dashboard**
+6. **Launch applications**
    ```bash
+   # Visualization dashboard
    uv run jupyter notebook notebooks/data_visualization.ipynb
+   
+   # Streamlit chatbot interface
+   uv run streamlit run src/chatbot-ui/streamlit_app.py
    ```
 
 ### Docker Deployment
@@ -71,7 +91,32 @@ make build-docker-streamlit
 make run-docker-streamlit
 ```
 
-## 📁 Project Structure
+### Weave Tracing Setup
+
+The application includes optional Weave tracing for LLM call monitoring and performance analysis.
+
+1. **Get W&B API Key**
+   - Sign up at [wandb.ai](https://wandb.ai)
+   - Get your API key from [User Settings](https://wandb.ai/authorize)
+
+2. **Configure Tracing**
+   ```bash
+   # Add to your .env file
+   echo "WANDB_API_KEY=your_wandb_api_key" >> .env
+   ```
+
+3. **Features Tracked**
+   - LLM call performance and latency
+   - Model configuration (temperature, tokens, top-p, top-k)
+   - Conversation flows and context
+   - Provider comparison (OpenAI vs Groq vs Google)
+
+4. **View Traces**
+   - Visit your [W&B dashboard](https://wandb.ai)
+   - Navigate to the "Bootcamp" project
+   - Explore detailed traces and performance metrics
+
+## Project Structure
 
 ```
 AI-Powered-Amazon-Product-Assistant/
@@ -79,10 +124,10 @@ AI-Powered-Amazon-Product-Assistant/
 │   ├── Electronics.jsonl              # Raw review data (21GB)
 │   ├── meta_Electronics.jsonl         # Raw product metadata (4.9GB)
 │   └── processed/
-│       ├── electronics_top1000_products.jsonl    # Processed products
-│       ├── electronics_top1000_products_reviews.jsonl     # Processed reviews
-│       ├── electronics_rag_documents.jsonl       # RAG-optimized documents
-│       └── dataset_summary.json                  # Dataset statistics
+│       ├── electronics_top1000_products.jsonl           # Processed products
+│       ├── electronics_top1000_products_reviews.jsonl   # Processed reviews
+│       ├── electronics_rag_documents.jsonl              # RAG-optimized documents
+│       └── dataset_summary.json                         # Dataset statistics
 ├── notebooks/
 │   ├── data_preprocessing.ipynb        # Data processing pipeline
 │   ├── data_visualization.ipynb        # Interactive visualizations
@@ -98,7 +143,7 @@ AI-Powered-Amazon-Product-Assistant/
 └── Makefile                           # Build automation
 ```
 
-## 📈 Data Processing Pipeline
+## Data Processing Pipeline
 
 The project includes a comprehensive data processing pipeline:
 
@@ -108,7 +153,7 @@ The project includes a comprehensive data processing pipeline:
 4. **Data Cleaning**: Handles missing values, validates data integrity
 5. **RAG Optimization**: Formats data for retrieval-augmented generation systems
 
-## 📊 Visualization Capabilities
+## Visualization Capabilities
 
 The visualization notebook provides comprehensive insights:
 
@@ -119,17 +164,19 @@ The visualization notebook provides comprehensive insights:
 - **Temporal Analysis**: Review trends over time (2003-2023)
 - **Text Analysis**: Review length and content characteristics
 
-## 🔧 Technical Stack
+## Technical Stack
 
 - **Data Processing**: pandas, numpy, json
 - **Visualization**: matplotlib, seaborn, plotly
 - **Notebook Environment**: Jupyter, IPython
 - **Package Management**: uv (modern Python package manager)
-- **Web Interface**: Streamlit
-- **Containerization**: Docker
-- **AI/ML**: Prepared for integration with OpenAI, Groq, Google GenAI
+- **Web Interface**: Streamlit with configurable LLM parameters
+- **LLM Providers**: OpenAI GPT-4o, Groq Llama, Google Gemini 2.0
+- **Monitoring**: Weave tracing via Weights & Biases
+- **Configuration**: Pydantic settings with environment variables
+- **Containerization**: Docker with non-root security
 
-## 📝 Usage Examples
+## Usage Examples
 
 ### Data Processing
 ```python
@@ -154,7 +201,7 @@ from notebooks.data_visualization import temporal_analysis
 temporal_analysis(df_reviews)
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -169,7 +216,7 @@ temporal_analysis(df_reviews)
 
 4. **Large File Handling**: The raw data files are large (25GB+). Ensure sufficient disk space and memory.
 
-## 📚 Data Sources & Citations
+## Data Sources & Citations
 
 This project uses data from the Amazon Reviews 2023 dataset:
 
@@ -182,10 +229,10 @@ This project uses data from the Amazon Reviews 2023 dataset:
 }
 ```
 
-## 🤝 Contributing
+## Contributing
 
 This is a capstone project for educational purposes. Feel free to explore, learn, and adapt the code for your own projects.
 
-## 📄 License
+## License
 
 This project is licensed under the terms specified in the LICENSE file.

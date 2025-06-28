@@ -19,4 +19,5 @@ dependencies = [
     "seaborn>=0.13.2",
     "streamlit",
     "tqdm>=4.67.1",
+    "weave>=0.51.54",
 ]

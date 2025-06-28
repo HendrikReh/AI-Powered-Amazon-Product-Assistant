@@ -78,6 +78,8 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 - **Multi-provider support**: Full configuration for Google, partial for OpenAI/Groq
 - **Real-time updates**: Settings take effect immediately for new messages
 - **Visual feedback**: Current configuration and provider compatibility displayed
+- **Weave tracing integration**: Optional LLM call monitoring via W&B (WANDB_API_KEY)
+- **Error handling**: Graceful fallback when tracing unavailable
 
 ### Task 3 – EDA on Amazon Reviews
 
@@ -113,7 +115,17 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 - **Review text**: 274 characters average (substantial user feedback)
 - **Category depth**: 0-7 levels showing sophisticated product taxonomy
 
-### Task 4 – Initial Concept + Architecture
+### Task 4 – LLM Tracing & Monitoring ✅
+
+- **Weave integration**: Implemented `@weave.op()` decorator on LLM calls
+- **W&B authentication**: Automatic login with WANDB_API_KEY from environment
+- **Project tracking**: All traces logged to "Bootcamp" project in W&B
+- **Error resilience**: Graceful degradation when tracing unavailable
+- **Docker compatibility**: Fixed TTY issues for containerized deployment
+- **Performance monitoring**: Tracks call latency, token usage, and configuration
+- **Configuration tracking**: Logs temperature, max_tokens, top_p, top_k values
+
+### Task 5 – Initial Concept + Architecture
 
 - Chatbot-based product assistant using RAG
 - Targeting Amazon-like product datasets

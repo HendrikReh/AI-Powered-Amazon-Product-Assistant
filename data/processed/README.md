@@ -20,14 +20,31 @@ This directory contains processed and optimized datasets derived from the Amazon
 #### Schema:
 ```json
 {
-  "main_category": "string",           // Primary product category
-  "title": "string",                   // Product title
-  "average_rating": float,             // Average customer rating (1-5)
-  "rating_number": integer,            // Total number of ratings
-  "features": ["string"],              // Product feature list
-  "description": ["string"],           // Product descriptions
-  "price": float,                      // Product price (USD)
-  "images": [                          // Product image URLs
+  "_schema_description": {
+    "main_category": "Primary product category",
+    "title": "Product title",
+    "average_rating": "Average customer rating (1-5)",
+    "rating_number": "Total number of ratings",
+    "features": "Product feature list",
+    "description": "Product descriptions",
+    "price": "Product price (USD)",
+    "images": "Product image URLs with variants",
+    "videos": "Product video content",
+    "store": "Seller/store name",
+    "categories": "Hierarchical category path",
+    "details": "Technical specifications",
+    "parent_asin": "Amazon Standard Identification Number",
+    "bought_together": "Frequently bought together items",
+    "review_count": "Number of reviews for this product"
+  },
+  "main_category": "string",
+  "title": "string",
+  "average_rating": 4.5,
+  "rating_number": 1234,
+  "features": ["feature1", "feature2"],
+  "description": ["description1", "description2"],
+  "price": 29.99,
+  "images": [
     {
       "thumb": "url",
       "large": "url", 
@@ -35,23 +52,22 @@ This directory contains processed and optimized datasets derived from the Amazon
       "hi_res": "url"
     }
   ],
-  "videos": [                          // Product video content
+  "videos": [
     {
       "title": "string",
       "url": "url",
       "user_id": "string"
     }
   ],
-  "store": "string",                   // Seller/store name
-  "categories": ["string"],            // Hierarchical category path
-  "details": {                         // Technical specifications
+  "store": "string",
+  "categories": ["category1", "category2"],
+  "details": {
     "Brand": "string",
-    "Connector Type": "string",
-    // ... additional specs
+    "Connector Type": "string"
   },
-  "parent_asin": "string",             // Amazon Standard Identification Number
-  "bought_together": null,             // Frequently bought together items
-  "review_count": integer              // Number of reviews for this product
+  "parent_asin": "string",
+  "bought_together": null,
+  "review_count": 20
 }
 ```
 
@@ -72,14 +88,24 @@ This directory contains processed and optimized datasets derived from the Amazon
 #### Schema:
 ```json
 {
-  "asin": "string",                    // Product ASIN
-  "parent_asin": "string",             // Parent product ASIN
-  "rating": integer,                   // Review rating (1-5 stars)
-  "title": "string",                   // Review title/headline
-  "text": "string",                     // Full review text content
-  "timestamp": integer,                // Unix timestamp (milliseconds)
-  "verified_purchase": boolean,        // Amazon verified purchase flag
-  "helpful_vote": integer              // Number of helpful votes
+  "_schema_description": {
+    "asin": "Product ASIN",
+    "parent_asin": "Parent product ASIN",
+    "rating": "Review rating (1-5 stars)",
+    "title": "Review title/headline",
+    "text": "Full review text content",
+    "timestamp": "Unix timestamp (milliseconds)",
+    "verified_purchase": "Amazon verified purchase flag",
+    "helpful_vote": "Number of helpful votes"
+  },
+  "asin": "string",
+  "parent_asin": "string",
+  "rating": 5,
+  "title": "string",
+  "text": "string",
+  "timestamp": 1640995200000,
+  "verified_purchase": true,
+  "helpful_vote": 3
 }
 ```
 
@@ -100,34 +126,60 @@ This directory contains processed and optimized datasets derived from the Amazon
 #### Product Records Schema:
 ```json
 {
-  "id": "product_{asin}",              // Unique document ID
-  "type": "product",                   // Document type
-  "parent_asin": "string",             // Product ASIN
-  "title": "string",                   // Product title
-  "description": "string",             // Product description
-  "features": "string",                // Concatenated features
-  "price": float,                      // Product price
-  "average_rating": float,             // Average rating
-  "rating_number": integer,            // Total ratings
-  "review_count": integer,             // Review count
-  "store": "string",                   // Store name
-  "categories": ["string"],            // Category hierarchy
-  "details": {},                       // Product specifications
-  "content": "string"                  // Searchable content summary
+  "_schema_description": {
+    "id": "Unique document ID",
+    "type": "Document type",
+    "parent_asin": "Product ASIN",
+    "title": "Product title",
+    "description": "Product description",
+    "features": "Concatenated features",
+    "price": "Product price",
+    "average_rating": "Average rating",
+    "rating_number": "Total ratings",
+    "review_count": "Review count",
+    "store": "Store name",
+    "categories": "Category hierarchy",
+    "details": "Product specifications",
+    "content": "Searchable content summary"
+  },
+  "id": "product_B08N5WRWNW",
+  "type": "product",
+  "parent_asin": "string",
+  "title": "string",
+  "description": "string",
+  "features": "string",
+  "price": 29.99,
+  "average_rating": 4.5,
+  "rating_number": 1234,
+  "review_count": 20,
+  "store": "string",
+  "categories": ["Electronics", "Computers"],
+  "details": {},
+  "content": "string"
 }
 ```
 
 #### Review Summary Records Schema:
 ```json
 {
-  "id": "reviews_{asin}",              // Unique document ID
-  "type": "review_summary",            // Document type
-  "parent_asin": "string",             // Product ASIN
-  "product_title": "string",          // Associated product title
-  "total_reviews": integer,            // Number of reviews summarized
-  "positive_reviews": integer,         // Count of positive reviews
-  "negative_reviews": integer,         // Count of negative reviews
-  "content": "string"                  // Aggregated review insights
+  "_schema_description": {
+    "id": "Unique document ID",
+    "type": "Document type",
+    "parent_asin": "Product ASIN",
+    "product_title": "Associated product title",
+    "total_reviews": "Number of reviews summarized",
+    "positive_reviews": "Count of positive reviews",
+    "negative_reviews": "Count of negative reviews",
+    "content": "Aggregated review insights"
+  },
+  "id": "reviews_B08N5WRWNW",
+  "type": "review_summary",
+  "parent_asin": "string",
+  "product_title": "string",
+  "total_reviews": 20,
+  "positive_reviews": 15,
+  "negative_reviews": 5,
+  "content": "string"
 }
 ```
 

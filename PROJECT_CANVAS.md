@@ -122,8 +122,10 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 - **Project tracking**: All traces logged to "Bootcamp" project in W&B
 - **Error resilience**: Graceful degradation when tracing unavailable
 - **Docker compatibility**: Fixed TTY issues for containerized deployment
+  - *Detailed documentation*: [DOCKER_TTY_FIXES.md](DOCKER_TTY_FIXES.md)
 - **Performance monitoring**: Tracks call latency, token usage, and configuration
 - **Configuration tracking**: Logs temperature, max_tokens, top_p, top_k values
+  - *Complete tracing guide*: [WEAVE_TRACING_GUIDE.md](WEAVE_TRACING_GUIDE.md)
 
 ### Task 5 – Initial Concept + Architecture
 

@@ -68,11 +68,14 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 - Local project environment running from base repo (Lesson 5)
 - Dependencies installed and system operational
 
-### Task 2 – Project Configuration
+### Task 2 – Project Configuration ✅
 
-- Added config sliders:
-  - Temperature
-  - Max tokens
+- **Added config sliders in Streamlit sidebar:**
+  - **Temperature**: 0.0-2.0 range (default: 0.7) - Controls response creativity/randomness
+  - **Max Tokens**: 50-2000 range (default: 500) - Controls response length
+- **Multi-provider support**: Configuration applies to OpenAI, Groq, and Google models
+- **Real-time updates**: Settings take effect immediately for new messages
+- **Visual feedback**: Current configuration displayed in sidebar
 
 ### Task 3 – EDA on Amazon Reviews
 

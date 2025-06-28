@@ -120,27 +120,32 @@ The application includes optional Weave tracing for LLM call monitoring and perf
 
 ```
 AI-Powered-Amazon-Product-Assistant/
-├── data/
-│   ├── Electronics.jsonl              # Raw review data (21GB)
-│   ├── meta_Electronics.jsonl         # Raw product metadata (4.9GB)
-│   └── processed/
-│       ├── electronics_top1000_products.jsonl           # Processed products
-│       ├── electronics_top1000_products_reviews.jsonl   # Processed reviews
-│       ├── electronics_rag_documents.jsonl              # RAG-optimized documents
-│       └── dataset_summary.json                         # Dataset statistics
-├── notebooks/
-│   ├── data_preprocessing.ipynb        # Data processing pipeline
-│   ├── data_visualization.ipynb        # Interactive visualizations
-│   ├── verify_api_keys.ipynb          # API configuration
-│   └── data_visualization_executed.ipynb  # Executed visualization results
-├── src/
-│   └── chatbot-ui/                     # Streamlit application
-│       ├── core/
-│       │   └── config.py              # Configuration management
-│       └── streamlit_app.py           # Main application
-├── pyproject.toml                      # Dependencies and project config
-├── Dockerfile                         # Container configuration
-└── Makefile                           # Build automation
+├── 📁 data/
+│   ├── Electronics.jsonl                              # Raw review data (25GB)
+│   ├── meta_Electronics.jsonl                         # Raw product metadata (4.9GB)
+│   └── 📁 processed/
+│       ├── electronics_top1000_products.jsonl         # 1,000 product records
+│       ├── electronics_top1000_products_reviews.jsonl # 20,000 review records
+│       ├── electronics_rag_documents.jsonl            # 2,000 RAG-optimized documents
+│       ├── dataset_summary.json                       # Processing metadata
+│       └── README.md                                  # Data documentation
+├── 📁 notebooks/
+│   ├── data_preprocessing.ipynb                       # Data processing pipeline
+│   ├── data_visualization.ipynb                       # Interactive EDA template
+│   ├── data_visualization_executed.ipynb              # Complete analysis results
+│   ├── verify_api_keys.ipynb                         # API configuration testing
+│   └── README.md                                      # Notebook documentation
+├── 📁 src/
+│   └── 📁 chatbot-ui/
+│       ├── 📁 core/
+│       │   └── config.py                              # Multi-provider configuration
+│       └── streamlit_app.py                          # Main chatbot interface
+├── 📄 pyproject.toml                                  # uv dependencies & config
+├── 📄 Dockerfile                                      # Container deployment
+├── 📄 Makefile                                        # Build automation
+├── 📄 Project_Canvas.md                               # Project roadmap & tasks
+├── 📄 CLAUDE.md                                       # AI assistant change log
+└── 📄 README.md                                       # Project documentation
 ```
 
 ## Data Processing Pipeline

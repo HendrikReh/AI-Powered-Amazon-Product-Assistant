@@ -200,26 +200,30 @@ This directory contains processed and optimized datasets derived from the Amazon
 #### Schema:
 ```json
 {
+  "_schema_description": {
+    "dataset_info": "Metadata about dataset source and processing",
+    "statistics": "Statistical summaries of the processed data"
+  },
   "dataset_info": {
-    "source": "string",                // Data source information
-    "citation": "string",             // Academic citation
-    "processing_date": "string",      // ISO timestamp
-    "selection_criteria": {           // Processing parameters
-      "target_products": integer,
-      "min_reviews_per_product": integer,
-      "max_reviews_per_product": integer
+    "source": "Amazon Reviews 2023 - Electronics Category",
+    "citation": "Hou et al. (2024) arXiv:2403.03952",
+    "processing_date": "2025-06-26T00:00:00Z",
+    "selection_criteria": {
+      "target_products": 1000,
+      "min_reviews_per_product": 10,
+      "max_reviews_per_product": 20
     }
   },
   "statistics": {
-    "total_products": integer,        // Product count
-    "total_reviews": integer,         // Review count
-    "products_with_metadata": integer,
-    "products_with_reviews": integer,
-    "review_count_stats": {           // Original review statistics
-      "min": integer,
-      "max": integer,
-      "mean": float,
-      "median": float
+    "total_products": 1000,
+    "total_reviews": 20000,
+    "products_with_metadata": 1000,
+    "products_with_reviews": 1000,
+    "review_count_stats": {
+      "min": 3453,
+      "max": 178239,
+      "mean": 8022.5,
+      "median": 5332.0
     }
   }
 }

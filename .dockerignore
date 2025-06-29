@@ -1,0 +1,50 @@
+# Large data files that shouldn't be in Docker image
+data/Electronics.jsonl
+data/meta_Electronics.jsonl
+
+# Temporary and cache files
+.git
+.gitignore
+*.pyc
+__pycache__
+.pytest_cache
+.mypy_cache
+.coverage
+htmlcov
+
+# Virtual environment
+.venv
+venv
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints
+
+# ChromaDB local storage (use volume instead)
+data/chroma_db
+
+# Documentation files (not needed in container)
+*.md
+!README.md
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Development files
+notebooks/*.ipynb

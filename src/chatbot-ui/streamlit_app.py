@@ -3,8 +3,25 @@ import weave
 from openai import OpenAI
 from groq import Groq
 from google import genai
+import sys
+from pathlib import Path
+
+# Add the parent directory to sys.path to import from rag module
+parent_dir = Path(__file__).parent.parent
+sys.path.append(str(parent_dir))
 
 from core.config import config
+from rag.query_processor import create_rag_processor
+
+# Initialize RAG processor
+@st.cache_resource
+def get_rag_processor():
+    """Initialize and cache the RAG processor."""
+    try:
+        return create_rag_processor()
+    except Exception as e:
+        st.error(f"Failed to initialize RAG system: {e}")
+        return None
 
 # Initialize Weave for tracing
 if config.WANDB_API_KEY:
@@ -19,6 +36,13 @@ if config.WANDB_API_KEY:
         st.sidebar.info("Continuing without tracing...")
 else:
     st.sidebar.info("ℹ️ Weave tracing disabled (no WANDB_API_KEY)")
+
+# Initialize RAG processor
+rag_processor = get_rag_processor()
+if rag_processor:
+    st.sidebar.success("🔍 RAG system initialized")
+else:
+    st.sidebar.warning("⚠️ RAG system not available")
 
 ## Lets create a sidebar with a dropdown for the model list and providers
 with st.sidebar:
@@ -95,6 +119,44 @@ with st.sidebar:
         st.caption("✅ All parameters supported")
     else:
         st.caption("⚠️ Top-k not supported by OpenAI/Groq")
+    
+    # RAG Settings
+    st.divider()
+    st.subheader("RAG Settings")
+    
+    # RAG toggle
+    use_rag = st.checkbox(
+        "Enable RAG (Product Search)",
+        value=True,
+        help="Use product database for enhanced responses about electronics"
+    )
+    st.session_state.use_rag = use_rag
+    
+    if use_rag and rag_processor:
+        # RAG configuration options
+        max_products = st.slider(
+            "Max Products",
+            min_value=1,
+            max_value=10,
+            value=5,
+            help="Maximum number of products to retrieve"
+        )
+        st.session_state.max_products = max_products
+        
+        max_reviews = st.slider(
+            "Max Reviews",
+            min_value=1,
+            max_value=8,
+            value=3,
+            help="Maximum number of review summaries to retrieve"
+        )
+        st.session_state.max_reviews = max_reviews
+        
+        st.caption("🛍️ RAG will search electronics database for relevant context")
+    elif use_rag and not rag_processor:
+        st.error("RAG system not available - check data files")
+    else:
+        st.caption("🤖 Standard chatbot mode")
 
 
 if st.session_state.provider == "OpenAI":
@@ -111,11 +173,50 @@ def run_llm(client, messages):
     max_tokens = st.session_state.get('max_tokens', 500)
     top_p = st.session_state.get('top_p', 1.0)
     top_k = st.session_state.get('top_k', 40)
+    use_rag = st.session_state.get('use_rag', False)
+    
+    # Prepare messages for LLM
+    llm_messages = messages.copy()
+    
+    # Apply RAG if enabled and user message exists
+    if use_rag and rag_processor and len(messages) > 0:
+        latest_message = messages[-1]
+        if latest_message["role"] == "user":
+            try:
+                # Get RAG configuration
+                max_products = st.session_state.get('max_products', 5)
+                max_reviews = st.session_state.get('max_reviews', 3)
+                
+                # Build context with custom limits
+                context = rag_processor.build_context(
+                    latest_message["content"],
+                    max_products=max_products,
+                    max_reviews=max_reviews
+                )
+                
+                # Generate enhanced prompt if context found
+                if context.products or context.reviews:
+                    enhanced_prompt = rag_processor.generate_rag_prompt(context)
+                    
+                    # Replace the user's message with enhanced prompt
+                    llm_messages[-1] = {
+                        "role": "user",
+                        "content": enhanced_prompt
+                    }
+                    
+                    # Show RAG context info in sidebar
+                    with st.sidebar:
+                        st.success(f"🔍 RAG: Found {len(context.products)} products, {len(context.reviews)} reviews")
+                        st.caption(f"Query type: {context.query_type}")
+                
+            except Exception as e:
+                # Fallback to original query if RAG fails
+                st.sidebar.error(f"RAG error: {str(e)}")
     
     if st.session_state.provider == "Google":
         return client.models.generate_content(
             model=st.session_state.model_name,
-            contents=[message["content"] for message in messages],
+            contents=[message["content"] for message in llm_messages],
             config={
                 "temperature": temperature,
                 "max_output_tokens": max_tokens,
@@ -127,7 +228,7 @@ def run_llm(client, messages):
         # OpenAI and Groq support top_p but not top_k
         return client.chat.completions.create(
             model=st.session_state.model_name,
-            messages=messages,
+            messages=llm_messages,
             max_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p
@@ -135,19 +236,76 @@ def run_llm(client, messages):
 
 
 
+# Set up page title and description
+st.title("🛍️ Amazon Electronics Assistant")
+if rag_processor:
+    st.caption("Ask me about electronics products, reviews, comparisons, and recommendations!")
+else:
+    st.caption("General AI assistant (RAG not available)")
+
+# Add some example queries for RAG
+if rag_processor and st.session_state.get('use_rag', False):
+    with st.expander("💡 Try these example queries"):
+        example_queries = [
+            "What do people say about iPhone charger cables?",
+            "Compare Fire TV and regular tablets",
+            "Is the Ethernet cable good for gaming?",
+            "What are the main complaints about laptop backpacks?",
+            "Recommend a budget-friendly tablet under $100"
+        ]
+        
+        cols = st.columns(2)
+        for i, query in enumerate(example_queries):
+            with cols[i % 2]:
+                if st.button(query, key=f"example_{i}"):
+                    st.session_state.prefilled_query = query
+                    st.rerun()
+
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I assist you today?"}]
+    welcome_msg = "Hello! I'm your Amazon Electronics Assistant. "
+    if rag_processor:
+        welcome_msg += "Ask me about electronics products, reviews, comparisons, and recommendations from our database of 1,000 products and 20,000 reviews!"
+    else:
+        welcome_msg += "How can I assist you today?"
+    
+    st.session_state.messages = [{"role": "assistant", "content": welcome_msg}]
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Hello! How can I assist you today?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+# Initialize query input state
+if "query_input" not in st.session_state:
+    st.session_state.query_input = ""
 
-    with st.chat_message("assistant"):
-        output = run_llm(client, st.session_state.messages)
-        st.write(output)
-    st.session_state.messages.append({"role": "assistant", "content": output})
+# Handle prefilled query from example buttons
+if "prefilled_query" in st.session_state:
+    st.session_state.query_input = st.session_state.prefilled_query
+    del st.session_state.prefilled_query  # Clear after using
+
+# Create a form for the query input
+with st.form(key="query_form", clear_on_submit=True):
+    query_input = st.text_input(
+        "Ask about electronics products, reviews, or comparisons...",
+        value=st.session_state.query_input,
+        placeholder="Type your question here or click an example above",
+        key="query_text_input"
+    )
+    submit_button = st.form_submit_button("Send")
+    
+    if submit_button and query_input.strip():
+        # Clear the session state input
+        st.session_state.query_input = ""
+        
+        # Add user message
+        st.session_state.messages.append({"role": "user", "content": query_input})
+        with st.chat_message("user"):
+            st.markdown(query_input)
+
+        # Generate assistant response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..." if not st.session_state.get('use_rag', False) else "Searching products and reviews..."):
+                output = run_llm(client, st.session_state.messages)
+                st.write(output)
+        st.session_state.messages.append({"role": "assistant", "content": output})
+        st.rerun()

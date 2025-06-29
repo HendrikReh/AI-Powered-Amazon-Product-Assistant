@@ -10,6 +10,11 @@ ENV UV_LINK_MODE=copy
 # Set Python path to include the src directory for imports
 ENV PYTHONPATH="/app/src:$PYTHONPATH"
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy only dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
 
@@ -18,10 +23,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
 # Copy application code
-COPY src/chatbot-ui ./src/chatbot-ui/
+COPY src/ ./src/
+
+# Copy only the processed RAG documents (not the large raw files)
+COPY data/processed/ ./data/processed/
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
 # Pre-compile Python files to bytecode
-RUN python -m compileall ./src/chatbot-ui
+RUN python -m compileall ./src/
 
 # Set PATH to use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
@@ -30,6 +41,8 @@ ENV PATH="/app/.venv/bin:$PATH"
 RUN addgroup --system app && \
     adduser --system --ingroup app --home /home/app app && \
     mkdir -p /home/app/.streamlit && \
+    mkdir -p /app/data/chroma_db && \
+    chmod +x /app/docker-entrypoint.sh && \
     chown -R app:app /app && \
     chown -R app:app /home/app
 
@@ -46,4 +59,4 @@ RUN echo '[browser]\ngatherUsageStats = false\n[server]\nheadless = true\n' > /h
 EXPOSE 8501
 
 # Command to run the application
-CMD ["streamlit", "run", "src/chatbot-ui/streamlit_app.py", "--server.address=0.0.0.0"]
+CMD ["./docker-entrypoint.sh"]

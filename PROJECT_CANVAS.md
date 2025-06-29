@@ -1,4 +1,4 @@
-# Project Canvas - "AI-Powered Amazon Product Assistant"
+# Project Canvas - "AI-Powered Amazon Product Assistant" (B2C only)
 
 **CAUTION:** B2C only
 

@@ -1,5 +1,7 @@
 # Project Canvas - "AI-Powered Amazon Product Assistant"
 
+**CAUTION:** B2C only
+
 * **Prepared by:** [Hendrik Reh](hendrik.reh@gmail.com)
 * **Prepared for:** Aurimas Griciūnas
 * **Date:** 2025/06/28

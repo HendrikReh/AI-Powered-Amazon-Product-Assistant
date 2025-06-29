@@ -1,6 +1,6 @@
 # AI-Powered Amazon Product Assistant (B2C only)
 
-An end-to-end AI engineering project that builds an intelligent product recommendation and analysis system using Amazon Electronics dataset. This capstone project demonstrates modern AI engineering practices including data processing, visualization, and retrieval-augmented generation (RAG).
+An end-to-end AI engineering project that builds an intelligent product recommendation and analysis system using Amazon Electronics dataset with a complete RAG implementation. This capstone project demonstrates modern AI engineering practices including data processing, visualization, vector databases, and retrieval-augmented generation (RAG).
 
 **Course**: End-to-End AI Engineering Bootcamp ([Maven](https://maven.com/swirl-ai/end-to-end-ai-engineering))
 
@@ -8,9 +8,11 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 
 - **Data Processing Pipeline**: Automated processing of large-scale Amazon product and review data
 - **Interactive Visualizations**: Comprehensive analysis dashboards with temporal trends, category insights, and rating patterns  
-- **RAG-Ready Dataset**: Processed data optimized for retrieval-augmented generation systems
-- **Streamlit UI**: User-friendly interface with configurable LLM parameters (temperature, max tokens, top-p, top-k)
+- **Complete RAG System**: Vector database with ChromaDB, intelligent query processing, and context-aware retrieval
+- **Streamlit UI**: Enhanced chat interface with RAG toggle, configurable LLM parameters, and example queries
 - **Multi-Provider Support**: Compatible with OpenAI, Groq, and Google Gemini models
+- **Vector Database**: ChromaDB-powered semantic search with metadata filtering and hybrid queries
+- **Query Intelligence**: Automatic query type detection for product reviews, comparisons, complaints, and recommendations
 - **Weave Tracing**: Optional LLM call tracking and performance monitoring via Weights & Biases
 
 ## Out-of-Scope (B2B Scope)
@@ -87,19 +89,36 @@ An end-to-end AI engineering project that builds an intelligent product recommen
    # Visualization dashboard
    uv run jupyter notebook notebooks/data_visualization.ipynb
    
-   # Streamlit chatbot interface
+   # Streamlit chatbot interface with RAG
    uv run streamlit run src/chatbot-ui/streamlit_app.py
+   
+   # Test RAG system functionality
+   uv run python test_rag_system.py
    ```
 
-### Docker Deployment
+### Docker Deployment (with ChromaDB)
 
 ```bash
-# Build the container
+# Build the containers
 make build-docker-streamlit
 
-# Run the application
+# Run both Streamlit app and ChromaDB service
 make run-docker-streamlit
+
+# View logs
+make logs-docker-streamlit
+
+# Stop services
+make stop-docker-streamlit
+
+# Restart services
+make restart-docker-streamlit
 ```
+
+**Docker Services:**
+- **Streamlit App**: http://localhost:8501 
+- **ChromaDB Service**: http://localhost:8000
+- **Persistent Storage**: Vector data persisted in Docker volume
 
 ### Weave Tracing Setup
 
@@ -133,12 +152,13 @@ AI-Powered-Amazon-Product-Assistant/
 ├── 📁 data/
 │   ├── Electronics.jsonl                              # Raw review data (25GB)
 │   ├── meta_Electronics.jsonl                         # Raw product metadata (4.9GB)
-│   └── 📁 processed/
-│       ├── electronics_top1000_products.jsonl         # 1,000 product records
-│       ├── electronics_top1000_products_reviews.jsonl # 20,000 review records
-│       ├── electronics_rag_documents.jsonl            # 2,000 RAG-optimized documents
-│       ├── dataset_summary.json                       # Processing metadata
-│       └── README.md                                  # Data documentation
+│   ├── 📁 processed/
+│   │   ├── electronics_top1000_products.jsonl         # 1,000 product records
+│   │   ├── electronics_top1000_products_reviews.jsonl # 20,000 review records
+│   │   ├── electronics_rag_documents.jsonl            # 2,000 RAG-optimized documents
+│   │   ├── dataset_summary.json                       # Processing metadata
+│   │   └── README.md                                  # Data documentation
+│   └── 📁 chroma_db/                                  # Vector database storage (local)
 ├── 📁 notebooks/
 │   ├── data_preprocessing.ipynb                       # Data processing pipeline
 │   ├── data_visualization.ipynb                       # Interactive EDA template
@@ -146,17 +166,26 @@ AI-Powered-Amazon-Product-Assistant/
 │   ├── verify_api_keys.ipynb                         # API configuration testing
 │   └── README.md                                      # Notebook documentation
 ├── 📁 src/
-│   └── 📁 chatbot-ui/
-│       ├── 📁 core/
-│       │   └── config.py                              # Multi-provider configuration
-│       └── streamlit_app.py                          # Main chatbot interface
+│   ├── 📁 chatbot-ui/
+│   │   ├── 📁 core/
+│   │   │   └── config.py                              # Multi-provider configuration
+│   │   └── streamlit_app.py                          # Main chatbot interface with RAG
+│   └── 📁 rag/
+│       ├── vector_db.py                               # ChromaDB vector database (local)
+│       ├── vector_db_docker.py                       # ChromaDB vector database (Docker)
+│       └── query_processor.py                        # RAG query processing
+├── 📁 docs/                                          # Technical documentation
+│   ├── CHROMA.md                                      # ChromaDB integration guide
+│   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide
+│   └── DOCKER_TTY_FIXES.md                           # Container deployment fixes
 ├── 📄 pyproject.toml                                  # uv dependencies & config
+├── 📄 docker-compose.yml                              # Multi-service container setup
 ├── 📄 Dockerfile                                      # Container deployment
+├── 📄 docker-entrypoint.sh                           # Container initialization script
+├── 📄 test_rag_system.py                               # RAG system testing script
 ├── 📄 Makefile                                        # Build automation
 ├── 📄 PROJECT_CANVAS.md                               # Project roadmap & tasks
-├── 📄 WEAVE_TRACING_GUIDE.md                          # LLM tracing & monitoring guide
-├── 📄 DOCKER_TTY_FIXES.md                             # Container deployment fixes
-├── 📄 CLAUDE.md                                       # AI assistant change log
+├── 📄 CLAUDE.md                                       # AI assistant development log
 └── 📄 README.md                                       # Project documentation
 ```
 
@@ -169,6 +198,8 @@ The project includes a comprehensive data processing pipeline:
 3. **Review Sampling**: Extracts representative reviews for each product
 4. **Data Cleaning**: Handles missing values, validates data integrity
 5. **RAG Optimization**: Formats data for retrieval-augmented generation systems
+6. **Vector Database Creation**: Automatic ingestion into ChromaDB with embeddings and metadata
+7. **Query Processing**: Intelligent context retrieval based on query type and intent
 
 ## Visualization Capabilities
 
@@ -185,9 +216,11 @@ The visualization notebook provides comprehensive insights:
 
 - **Data Processing**: pandas, numpy, json
 - **Visualization**: matplotlib, seaborn, plotly
+- **Vector Database**: ChromaDB with persistent storage and semantic search
+- **RAG Implementation**: Custom query processing with intelligent context retrieval
 - **Notebook Environment**: Jupyter, IPython
 - **Package Management**: uv (modern Python package manager)
-- **Web Interface**: Streamlit with configurable LLM parameters
+- **Web Interface**: Streamlit with RAG integration and configurable LLM parameters
 - **LLM Providers**: OpenAI GPT-4o, Groq Llama, Google Gemini 2.0
 - **Monitoring**: Weave tracing via Weights & Biases
 - **Configuration**: Pydantic settings with environment variables
@@ -209,6 +242,19 @@ with open('data/processed/electronics_top1000_products.jsonl', 'r') as f:
 
 df_products = pd.DataFrame(products)
 print(f"Loaded {len(df_products)} products")
+```
+
+### RAG System
+```python
+# Test RAG system
+from src.rag.query_processor import create_rag_processor
+
+# Initialize processor
+processor = create_rag_processor()
+
+# Process a query
+result = processor.process_query("What do people say about iPhone charger cables?")
+print(f"Found {result['metadata']['num_products']} products and {result['metadata']['num_reviews']} reviews")
 ```
 
 ### Visualization
@@ -245,7 +291,16 @@ This project includes comprehensive documentation to help you understand and wor
 - Configuration features and tracing implementation status
 - Success criteria and architecture decisions
 
-### [WEAVE_TRACING_GUIDE.md](WEAVE_TRACING_GUIDE.md)
+### [docs/CHROMA.md](docs/CHROMA.md)
+**Complete ChromaDB integration guide**
+- Local vs Docker environment setup and configuration
+- Data loading process and timeline details
+- Search capabilities and metadata schema
+- Performance monitoring and logging
+- Troubleshooting guide and best practices
+- API reference and usage examples
+
+### [docs/WEAVE_TRACING_GUIDE.md](docs/WEAVE_TRACING_GUIDE.md)
 **Comprehensive LLM tracing and monitoring guide**
 - Complete Weave integration implementation details
 - Configuration parameter tracking (temperature, max_tokens, top_p, top_k)
@@ -254,7 +309,7 @@ This project includes comprehensive documentation to help you understand and wor
 - Performance monitoring and debugging techniques
 - Troubleshooting guide for common tracing issues
 
-### [DOCKER_TTY_FIXES.md](DOCKER_TTY_FIXES.md)
+### [docs/DOCKER_TTY_FIXES.md](docs/DOCKER_TTY_FIXES.md)
 **Containerized deployment compatibility guide**
 - Docker TTY issues and solutions for production deployment
 - Non-root user configuration and security best practices

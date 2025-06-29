@@ -9,7 +9,7 @@
 
 ## Project Name
 
-AI-Powered Amazon Product Assistant
+AI-Powered Amazon Product Assistant (B2C)
 
 ## Project Goal
 

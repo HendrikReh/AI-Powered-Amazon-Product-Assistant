@@ -1,4 +1,4 @@
-# AI-Powered Amazon Product Assistant
+# AI-Powered Amazon Product Assistant (B2C only)
 
 An end-to-end AI engineering project that builds an intelligent product recommendation and analysis system using Amazon Electronics dataset. This capstone project demonstrates modern AI engineering practices including data processing, visualization, and retrieval-augmented generation (RAG).
 

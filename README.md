@@ -13,6 +13,16 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - **Multi-Provider Support**: Compatible with OpenAI, Groq, and Google Gemini models
 - **Weave Tracing**: Optional LLM call tracking and performance monitoring via Weights & Biases
 
+## Out-of-Scope (B2B Scope)
+
+- contractual pricing
+- account-specific catalogs
+- procurement compliance
+- multi-user workflows (approvers, requisitioners, etc.)
+- Bulk ordering, BOM-style inputs, or quote-based negotiation are not captured
+- ERP integration, punchout catalogs (OCI, cXML)
+- product taxonomies (e.g. ETIM, UNSPSC)
+  
 ## Dataset Overview
 
 **Source**: Amazon Reviews 2023 - Electronics Category

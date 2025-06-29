@@ -1,7 +1,7 @@
 # Project Canvas - "AI-Powered Amazon Product Assistant" (B2C only)
 
 * **Prepared by:** [Hendrik Reh](hendrik.reh@gmail.com)
-* **Prepared for:** Aurimas Griciūnas
+* **Prepared for:** Aurimas Griciūnas (Instrcutor) | [End-to-End AI Engineering Bootcamp](https://maven.com/swirl-ai/end-to-end-ai-engineering)
 * **Date:** 2025/06/28
 * **Version:** 0.1.0
 

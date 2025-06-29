@@ -19,6 +19,16 @@ Develop a production-grade, AI-powered product assistant that helps users intera
 
 Online shoppers face information overload and often struggle to find the right product insights in massive marketplaces. Our AI assistant addresses this by retrieving and summarizing key data (e.g., reviews, ratings, product features) to support better and faster purchase decisions.
 
+## Out-of-Scope
+
+- contractual pricing
+- account-specific catalogs
+- procurement compliance.
+- multi-user workflows (approvers, requisitioners, etc.).
+- Bulk ordering, BOM-style inputs, or quote-based negotiation are not captured.
+- ERP integration, punchout catalogs (OCI, cXML),
+- product taxonomies (e.g. ETIM, UNSPSC).
+
 ## Target Users
 
 - End consumers browsing for specific products

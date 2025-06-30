@@ -7,3 +7,4 @@
 .DS_Store
 /data/Electronics.jsonl
 /data/meta_Electronics.jsonl
+__pycache__

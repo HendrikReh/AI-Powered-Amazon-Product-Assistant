@@ -14,6 +14,8 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - **Vector Database**: ChromaDB-powered semantic search with GTE-large embeddings, metadata filtering and hybrid queries
 - **Query Intelligence**: Automatic query type detection for product reviews, comparisons, complaints, and recommendations
 - **RAG Evaluation Framework**: Comprehensive evaluation system with Weave integration, 5 core metrics, and 14 test examples
+- **Synthetic Test Data**: Advanced synthetic data generation with template-based queries, variation techniques, and quality analysis
+- **Production Testing**: Automated test case generation with configurable difficulty distributions and Weave traceability
 - **Optimized Weave Tracing**: Production-ready AI pipeline monitoring with efficient session-based initialization, zero-redundancy design, and comprehensive analytics
 
 ## Out-of-Scope (B2B Scope)
@@ -100,6 +102,15 @@ An end-to-end AI engineering project that builds an intelligent product recommen
    # Run RAG evaluation framework
    uv run python run_evaluation.py --create-dataset
    uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+   
+   # Generate and evaluate synthetic test data
+   uv run python run_synthetic_evaluation.py --synthetic-only --num-synthetic 50
+   
+   # Create mixed dataset (original + synthetic)
+   uv run python run_synthetic_evaluation.py --mixed-dataset --save-datasets
+   
+   # Run synthetic data examples
+   uv run python examples/synthetic_data_examples.py
    ```
 
 ### Docker Deployment (with ChromaDB)
@@ -199,12 +210,16 @@ AI-Powered-Amazon-Product-Assistant/
 │       ├── __init__.py                                # Evaluation module interface
 │       ├── evaluator.py                               # Main RAG evaluator using Weave
 │       ├── dataset.py                                 # Evaluation dataset creation and management
-│       └── scorers.py                                 # Scoring functions for 5 core metrics
+│       ├── scorers.py                                 # Scoring functions for 5 core metrics
+│       └── synthetic_data_generator.py               # Advanced synthetic test data generation
+├── 📁 examples/
+│   └── synthetic_data_examples.py                    # Synthetic data usage demonstrations
 ├── 📁 docs/                                          # Technical documentation
 │   ├── CHROMA.md                                      # ChromaDB integration guide
 │   ├── LOCAL_VS_DOCKER.md                            # Local vs Docker implementation comparison
 │   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide
 │   ├── EVALUATIONS.md                                # RAG evaluation framework documentation
+│   ├── SYNTHETIC_DATA.md                             # Synthetic test data generation guide
 │   └── DOCKER_TTY_FIXES.md                           # Container deployment fixes
 ├── 📄 pyproject.toml                                  # uv dependencies & config
 ├── 📄 docker-compose.yml                              # Multi-service container setup
@@ -212,6 +227,7 @@ AI-Powered-Amazon-Product-Assistant/
 ├── 📄 docker-entrypoint.sh                           # Container initialization script
 ├── 📄 test_rag_system.py                               # RAG system testing script
 ├── 📄 run_evaluation.py                               # RAG evaluation framework runner
+├── 📄 run_synthetic_evaluation.py                     # Synthetic data evaluation runner
 ├── 📄 Makefile                                        # Build automation
 ├── 📄 PROJECT_CANVAS.md                               # Project roadmap & tasks
 ├── 📄 CLAUDE.md                                       # AI assistant development log
@@ -306,6 +322,28 @@ metrics = evaluator.run_single_evaluation(
 )
 
 print(f"Overall Score: {metrics.overall:.3f}")
+```
+
+### Synthetic Test Data Generation
+```python
+# Generate synthetic evaluation data
+from src.evaluation.synthetic_data_generator import create_synthetic_dataset, SyntheticDataConfig
+
+# Custom configuration
+config = SyntheticDataConfig(
+    num_examples_per_category=5,
+    difficulty_distribution={"easy": 0.3, "medium": 0.5, "hard": 0.2},
+    variation_techniques=["rephrase", "specificity", "context"]
+)
+
+# Generate synthetic examples
+synthetic_examples = create_synthetic_dataset(config, num_examples=30)
+print(f"Generated {len(synthetic_examples)} synthetic test cases")
+
+# Create mixed dataset (original + synthetic)
+from src.evaluation.synthetic_data_generator import create_mixed_dataset
+original_examples = create_evaluation_dataset()
+mixed_dataset = create_mixed_dataset(original_examples, synthetic_ratio=0.5)
 ```
 
 ### Visualization

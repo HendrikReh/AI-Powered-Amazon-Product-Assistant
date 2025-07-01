@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Union, Any
 import chromadb
 from chromadb.config import Settings
 from tqdm import tqdm
+import weave
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,10 @@ class ElectronicsVectorDBDocker:
         self.chroma_port = chroma_port or int(os.getenv("CHROMA_PORT", "8000"))
         
         logger.info(f"Connecting to ChromaDB at {self.chroma_host}:{self.chroma_port}")
+        
+        # Use default embedding for Docker to avoid GTE model download
+        # This saves 670MB of disk space in containers
+        self.embedding_function = None  # Use ChromaDB default
         
         # Initialize Chroma client for Docker environment
         try:
@@ -58,23 +63,26 @@ class ElectronicsVectorDBDocker:
                 )
             )
         
-        # Collection for storing both products and reviews
-        self.collection_name = "electronics_products_reviews"
+        # Collection for storing both products and reviews (keeping GTE name for compatibility)
+        self.collection_name = "electronics_products_reviews_gte"
         self.collection = None
         
+    @weave.op()
     def create_collection(self) -> None:
         """Create or get the collection for storing documents."""
         try:
+            # Try to get existing collection first (with or without embedding function)
             self.collection = self.client.get_collection(name=self.collection_name)
             logger.info(f"Retrieved existing collection: {self.collection_name}")
         except Exception:
-            # Collection doesn't exist, create it
+            # Collection doesn't exist, create it with default embedding
             self.collection = self.client.create_collection(
                 name=self.collection_name,
                 metadata={"hnsw:space": "cosine"}
             )
             logger.info(f"Created new collection: {self.collection_name}")
     
+    @weave.op()
     def load_documents(self, jsonl_path: str) -> List[Dict[str, Any]]:
         """Load documents from JSONL file."""
         documents = []
@@ -107,6 +115,7 @@ class ElectronicsVectorDBDocker:
         logger.info(f"Loaded {len(documents)} documents from {jsonl_path}")
         return documents
     
+    @weave.op()
     def prepare_document_for_ingestion(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare a document for vector database ingestion."""
         doc_id = doc["id"]
@@ -153,6 +162,7 @@ class ElectronicsVectorDBDocker:
             "metadata": cleaned_metadata
         }
     
+    @weave.op()
     def ingest_documents(self, documents: List[Dict[str, Any]], batch_size: int = 100) -> None:
         """Ingest documents into the vector database."""
         if not self.collection:
@@ -186,6 +196,7 @@ class ElectronicsVectorDBDocker:
         
         logger.info("Document ingestion completed.")
     
+    @weave.op()
     def get_collection_stats(self) -> Dict[str, Any]:
         """Get statistics about the collection."""
         if not self.collection:
@@ -213,6 +224,7 @@ class ElectronicsVectorDBDocker:
             logger.error(f"Failed to get collection stats: {e}")
             return {"error": str(e)}
     
+    @weave.op()
     def search_products(
         self, 
         query: str, 
@@ -270,6 +282,7 @@ class ElectronicsVectorDBDocker:
             logger.error(f"Search failed: {e}")
             return {"error": str(e)}
     
+    @weave.op()
     def search_reviews(
         self, 
         query: str, 
@@ -301,6 +314,7 @@ class ElectronicsVectorDBDocker:
             logger.error(f"Review search failed: {e}")
             return {"error": str(e)}
     
+    @weave.op()
     def hybrid_search(
         self, 
         query: str, 
@@ -348,6 +362,7 @@ class ElectronicsVectorDBDocker:
             return {"error": str(e)}
 
 
+@weave.op()
 def setup_vector_database_docker(jsonl_path: str = "data/processed/electronics_rag_documents.jsonl") -> ElectronicsVectorDBDocker:
     """Setup and populate the Docker-compatible vector database."""
     logger.info("Setting up Docker-compatible vector database...")

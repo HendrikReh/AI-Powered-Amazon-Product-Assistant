@@ -10,7 +10,9 @@ from typing import Dict, List, Optional, Union, Any
 
 import chromadb
 from chromadb.config import Settings
+from chromadb.utils import embedding_functions
 from tqdm import tqdm
+import weave
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,11 @@ class ElectronicsVectorDB:
         self.persist_directory = Path(persist_directory)
         self.persist_directory.mkdir(parents=True, exist_ok=True)
         
+        # Initialize GTE-large embedding function
+        self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="thenlper/gte-large"
+        )
+        
         # Initialize Chroma client with persistence
         self.client = chromadb.PersistentClient(
             path=str(self.persist_directory),
@@ -33,22 +40,28 @@ class ElectronicsVectorDB:
         )
         
         # Collection for storing both products and reviews
-        self.collection_name = "electronics_products_reviews"
+        self.collection_name = "electronics_products_reviews_gte"
         self.collection = None
         
+    @weave.op()
     def create_collection(self) -> None:
         """Create or get the collection for storing documents."""
         try:
-            self.collection = self.client.get_collection(name=self.collection_name)
+            self.collection = self.client.get_collection(
+                name=self.collection_name,
+                embedding_function=self.embedding_function
+            )
             logger.info(f"Retrieved existing collection: {self.collection_name}")
         except Exception:
             # Collection doesn't exist, create it
             self.collection = self.client.create_collection(
                 name=self.collection_name,
+                embedding_function=self.embedding_function,
                 metadata={"hnsw:space": "cosine"}
             )
             logger.info(f"Created new collection: {self.collection_name}")
     
+    @weave.op()
     def load_documents(self, jsonl_path: str) -> List[Dict[str, Any]]:
         """Load documents from JSONL file."""
         documents = []
@@ -64,6 +77,7 @@ class ElectronicsVectorDB:
         logger.info(f"Loaded {len(documents)} documents from {jsonl_path}")
         return documents
     
+    @weave.op()
     def prepare_document_for_ingestion(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare a document for vector database ingestion."""
         doc_id = doc["id"]
@@ -110,6 +124,7 @@ class ElectronicsVectorDB:
             "metadata": cleaned_metadata
         }
     
+    @weave.op()
     def ingest_documents(self, documents: List[Dict[str, Any]], batch_size: int = 100) -> None:
         """Ingest documents into the vector database."""
         if not self.collection:
@@ -143,6 +158,7 @@ class ElectronicsVectorDB:
         
         logger.info("Document ingestion completed.")
     
+    @weave.op()
     def get_collection_stats(self) -> Dict[str, Any]:
         """Get statistics about the collection."""
         if not self.collection:
@@ -164,6 +180,7 @@ class ElectronicsVectorDB:
             "collection_name": self.collection_name
         }
     
+    @weave.op()
     def search_products(
         self, 
         query: str, 
@@ -221,6 +238,7 @@ class ElectronicsVectorDB:
             logger.error(f"Search failed: {e}")
             return {"error": str(e)}
     
+    @weave.op()
     def search_reviews(
         self, 
         query: str, 
@@ -252,6 +270,7 @@ class ElectronicsVectorDB:
             logger.error(f"Review search failed: {e}")
             return {"error": str(e)}
     
+    @weave.op()
     def get_product_with_reviews(self, parent_asin: str) -> Dict[str, Any]:
         """Get a specific product and its reviews by ASIN."""
         if not self.collection:
@@ -289,6 +308,7 @@ class ElectronicsVectorDB:
             logger.error(f"Failed to get product with reviews: {e}")
             return {"error": str(e)}
     
+    @weave.op()
     def hybrid_search(
         self, 
         query: str, 
@@ -335,6 +355,7 @@ class ElectronicsVectorDB:
             logger.error(f"Hybrid search failed: {e}")
             return {"error": str(e)}
     
+    @weave.op()
     def reset_collection(self) -> None:
         """Reset the collection (delete all data)."""
         if self.collection:
@@ -343,6 +364,7 @@ class ElectronicsVectorDB:
         self.collection = None
 
 
+@weave.op()
 def setup_vector_database(jsonl_path: str, persist_directory: str = "data/chroma_db") -> ElectronicsVectorDB:
     """Setup and populate the vector database."""
     logger.info("Setting up vector database...")

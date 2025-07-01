@@ -33,6 +33,21 @@ uv run python test_rag_system.py
 uv run python src/rag/vector_db.py
 ```
 
+### Evaluation & Testing
+```bash
+# Create evaluation dataset with ground truth examples
+uv run python run_evaluation.py --create-dataset
+
+# Run single query evaluation for testing
+uv run python run_evaluation.py --single-query "What are iPhone charger features?" --mock-llm
+
+# Run full RAG system evaluation using Weave
+uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+
+# Run evaluation with custom dataset
+uv run python run_evaluation.py --dataset-path "data/evaluation/custom_dataset.json" --mock-llm
+```
+
 ### Docker Operations
 ```bash
 # Build Docker containers (Streamlit + ChromaDB service)
@@ -167,6 +182,31 @@ Run the data processing notebooks to verify the pipeline:
 uv run jupyter notebook notebooks/verify_api_keys.ipynb  # Test API configuration
 uv run python test_rag_system.py  # Comprehensive RAG system testing
 ```
+
+### RAG System Evaluation
+The project includes a comprehensive evaluation framework using Weave for systematic testing:
+```bash
+# Create evaluation dataset (14 examples across query types)
+uv run python run_evaluation.py --create-dataset
+
+# Quick single query test
+uv run python run_evaluation.py --single-query "Your test query" --mock-llm
+
+# Full evaluation with Weave integration
+uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+```
+
+**Evaluation Metrics:**
+- **Relevance**: Topic coverage and query alignment (0-1 score)
+- **Accuracy**: Factual correctness and product mention accuracy
+- **Completeness**: Response depth and length appropriateness
+- **Factuality**: Contradiction detection and numerical claim verification
+- **Quality**: Clarity, helpfulness, and coherence assessment
+
+**Dataset Coverage:**
+- 14 evaluation examples across 6 query types
+- Difficulties: Easy (3), Medium (6), Hard (5)
+- Query types: product_info, product_reviews, product_complaints, product_comparison, product_recommendation, use_case
 
 ## RAG Query Examples
 The system handles various query types with intelligent context retrieval:

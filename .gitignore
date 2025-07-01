@@ -11,3 +11,4 @@ __pycache__
 /data/chroma_db
 /data
 /src/rag/__pycache__
+*.log

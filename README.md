@@ -13,6 +13,7 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - **Multi-Provider Support**: Compatible with OpenAI, Groq, and Google Gemini models
 - **Vector Database**: ChromaDB-powered semantic search with GTE-large embeddings, metadata filtering and hybrid queries
 - **Query Intelligence**: Automatic query type detection for product reviews, comparisons, complaints, and recommendations
+- **RAG Evaluation Framework**: Comprehensive evaluation system with Weave integration, 5 core metrics, and 14 test examples
 - **Optimized Weave Tracing**: Production-ready AI pipeline monitoring with efficient session-based initialization, zero-redundancy design, and comprehensive analytics
 
 ## Out-of-Scope (B2B Scope)
@@ -95,6 +96,10 @@ An end-to-end AI engineering project that builds an intelligent product recommen
    
    # Test RAG system functionality
    uv run python test_rag_system.py
+   
+   # Run RAG evaluation framework
+   uv run python run_evaluation.py --create-dataset
+   uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
    ```
 
 ### Docker Deployment (with ChromaDB)
@@ -186,20 +191,27 @@ AI-Powered-Amazon-Product-Assistant/
 │   │   ├── 📁 core/
 │   │   │   └── config.py                              # Multi-provider configuration
 │   │   └── streamlit_app.py                          # Main chatbot interface with RAG
-│   └── 📁 rag/
-│       ├── vector_db.py                               # ChromaDB vector database (local, GTE-large)
-│       ├── vector_db_docker.py                       # ChromaDB vector database (Docker, optimized)
-│       └── query_processor.py                        # RAG query processing (auto-selects implementation)
+│   ├── 📁 rag/
+│   │   ├── vector_db.py                               # ChromaDB vector database (local, GTE-large)
+│   │   ├── vector_db_docker.py                       # ChromaDB vector database (Docker, optimized)
+│   │   └── query_processor.py                        # RAG query processing (auto-selects implementation)
+│   └── 📁 evaluation/
+│       ├── __init__.py                                # Evaluation module interface
+│       ├── evaluator.py                               # Main RAG evaluator using Weave
+│       ├── dataset.py                                 # Evaluation dataset creation and management
+│       └── scorers.py                                 # Scoring functions for 5 core metrics
 ├── 📁 docs/                                          # Technical documentation
 │   ├── CHROMA.md                                      # ChromaDB integration guide
 │   ├── LOCAL_VS_DOCKER.md                            # Local vs Docker implementation comparison
 │   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide
+│   ├── EVALUATIONS.md                                # RAG evaluation framework documentation
 │   └── DOCKER_TTY_FIXES.md                           # Container deployment fixes
 ├── 📄 pyproject.toml                                  # uv dependencies & config
 ├── 📄 docker-compose.yml                              # Multi-service container setup
 ├── 📄 Dockerfile                                      # Container deployment
 ├── 📄 docker-entrypoint.sh                           # Container initialization script
 ├── 📄 test_rag_system.py                               # RAG system testing script
+├── 📄 run_evaluation.py                               # RAG evaluation framework runner
 ├── 📄 Makefile                                        # Build automation
 ├── 📄 PROJECT_CANVAS.md                               # Project roadmap & tasks
 ├── 📄 CLAUDE.md                                       # AI assistant development log
@@ -275,6 +287,27 @@ result = processor.process_query("What do people say about iPhone charger cables
 print(f"Found {result['metadata']['num_products']} products and {result['metadata']['num_reviews']} reviews")
 ```
 
+### RAG Evaluation Framework
+```python
+# Run comprehensive evaluation
+from src.evaluation.evaluator import RAGEvaluator
+from src.evaluation.dataset import create_evaluation_dataset
+
+# Create evaluator with your RAG processor and LLM client
+evaluator = RAGEvaluator(rag_processor, llm_client)
+
+# Run single query evaluation
+metrics = evaluator.run_single_evaluation(
+    query="What are iPhone charger features?",
+    expected_answer="Expected response...",
+    expected_products=["lightning_cable"],
+    expected_topics=["features", "compatibility"],
+    query_type="product_info"
+)
+
+print(f"Overall Score: {metrics.overall:.3f}")
+```
+
 ### Visualization
 ```python
 # Generate temporal analysis
@@ -345,6 +378,15 @@ This project includes comprehensive documentation to help you understand and wor
 - Provider-specific handling and error resilience
 - Performance monitoring and debugging techniques
 - Troubleshooting guide for common tracing issues
+
+### [docs/EVALUATIONS.md](docs/EVALUATIONS.md)
+**RAG evaluation framework documentation**
+- Comprehensive evaluation system using Weave for experiment tracking
+- 5 core metrics: Relevance, Accuracy, Completeness, Factuality, Quality
+- 14 evaluation examples across 6 query types and 3 difficulty levels
+- Command-line interface and integration examples
+- Performance benchmarks and customization guide
+- Continuous integration setup and troubleshooting
 
 ### [docs/DOCKER_TTY_FIXES.md](docs/DOCKER_TTY_FIXES.md)
 **Containerized deployment compatibility guide**

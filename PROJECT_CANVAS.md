@@ -233,6 +233,12 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 
 *Implementation details documented in updated README.md, CLAUDE.md, and docs/CHROMA.md*
 
+#### Dual-Architecture Implementation ✅
+- **Local Development**: `vector_db.py` with GTE-large embeddings for maximum quality (1024 dimensions)
+- **Docker Production**: `vector_db_docker.py` with default embeddings for container optimization (384 dimensions)
+- **Automatic Selection**: Environment detection via `CHROMA_HOST` variable
+- **Comprehensive Documentation**: Complete comparison guide created at `docs/LOCAL_VS_DOCKER.md`
+
 ### Recent Enhancement – Optimized Weave Tracing (v0.5.0) ✅
 
 **Production-ready observability with zero-redundancy design and session state optimization:**
@@ -291,7 +297,7 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 - **Monitoring Quality**: Rich analytics and error tracking without redundant data
 - **User Experience**: Seamless operation with real-time feedback in Streamlit sidebar
 
-*Implementation details documented across README.md, CLAUDE.md, PROJECT_CANVAS.md with troubleshooting guide*
+*Implementation details documented across README.md, CLAUDE.md, PROJECT_CANVAS.md, docs/LOCAL_VS_DOCKER.md with comprehensive troubleshooting guides*
 
 ## Success Criteria ✅
 

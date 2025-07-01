@@ -26,19 +26,19 @@ uv run jupyter notebook notebooks/data_preprocessing.ipynb
 # Run visualization notebooks  
 uv run jupyter notebook notebooks/data_visualization.ipynb
 
-# Test RAG system functionality
+# Test RAG system functionality (auto-detects local vs Docker implementation)
 uv run python test_rag_system.py
 
-# Initialize vector database manually
+# Initialize vector database manually (local development with GTE-large)
 uv run python src/rag/vector_db.py
 ```
 
 ### Docker Operations
 ```bash
-# Build Docker containers (Streamlit + ChromaDB)
+# Build Docker containers (Streamlit + ChromaDB service)
 make build-docker-streamlit
 
-# Run containerized services (app + vector database)
+# Run containerized services (uses vector_db_docker.py with optimized embeddings)
 make run-docker-streamlit
 
 # View application logs
@@ -65,10 +65,24 @@ make clean-notebook-outputs
 ### Core Structure
 - **Data Processing**: `notebooks/` contains Jupyter notebooks for EDA and data preprocessing
 - **Chatbot Interface**: `src/chatbot-ui/` contains Streamlit-based chat application with RAG integration
-- **RAG System**: `src/rag/` contains vector database and query processing components
+- **RAG System**: `src/rag/` contains dual vector database implementations and query processing
 - **Configuration**: `src/chatbot-ui/core/config.py` manages API keys and settings via Pydantic
 - **Processed Data**: `data/processed/` contains cleaned datasets ready for RAG implementation
-- **Vector Database**: `data/chroma_db/` contains ChromaDB persistent storage for embeddings
+- **Vector Database**: Dual storage approach (local files for dev, service for production)
+
+### Dual Vector Database Architecture
+- **Automatic Detection**: System selects implementation based on `CHROMA_HOST` environment variable
+- **Local Development** (`vector_db.py`):
+  - Uses `chromadb.PersistentClient` with local file storage
+  - GTE-large embeddings (1024 dimensions) for maximum search quality
+  - Best for development, testing, and debugging
+- **Docker Production** (`vector_db_docker.py`):
+  - Uses `chromadb.HttpClient` connecting to external ChromaDB service
+  - Default embeddings (384 dimensions) for container optimization
+  - Fallback to local storage if service unavailable
+  - Saves 670MB in container images
+- **Seamless Switching**: `query_processor.py` automatically imports correct implementation
+- **📖 Complete comparison guide**: See `docs/LOCAL_VS_DOCKER.md` for detailed analysis
 
 ### Multi-Provider LLM Support
 The chatbot supports three LLM providers with different parameter compatibility:
@@ -83,6 +97,23 @@ OPENAI_API_KEY=your_key_here
 GROQ_API_KEY=your_key_here  
 GOOGLE_API_KEY=your_key_here
 WANDB_API_KEY=your_key_here  # Optional for Weave tracing
+
+# Docker environment detection (optional)
+CHROMA_HOST=chromadb        # Triggers Docker vector database mode
+CHROMA_PORT=8000           # ChromaDB service port
+```
+
+#### Vector Database Selection Logic
+```python
+# Automatic implementation selection in query_processor.py
+is_docker = os.getenv("CHROMA_HOST") is not None
+
+if is_docker:
+    # Uses vector_db_docker.py with HTTP client and default embeddings
+    from .vector_db_docker import ElectronicsVectorDBDocker as ElectronicsVectorDB
+else:
+    # Uses vector_db.py with persistent client and GTE-large embeddings
+    from .vector_db import ElectronicsVectorDB
 ```
 
 ### Data Pipeline Architecture
@@ -93,8 +124,10 @@ WANDB_API_KEY=your_key_here  # Optional for Weave tracing
 5. **Visualization**: Comprehensive EDA with temporal, category, and rating analysis
 
 ### RAG System Architecture
-- **Vector Database**: ChromaDB with persistent storage in `data/chroma_db/`
-- **Embedding Model**: GTE-large (thenlper/gte-large) with 1024-dimensional embeddings
+- **Dual Vector Database**: Automatic environment detection for optimal implementation
+  - **Local Development**: `vector_db.py` with GTE-large embeddings (1024D) for maximum quality
+  - **Docker Production**: `vector_db_docker.py` with default embeddings (384D) for container optimization
+- **Environment Detection**: Automatic selection via `CHROMA_HOST` environment variable
 - **Document Types**: Products and review summaries with structured metadata
 - **Query Processing**: Intelligent query type detection and context-aware retrieval
 - **Search Capabilities**: Semantic search, metadata filtering, hybrid queries
@@ -118,7 +151,8 @@ WANDB_API_KEY=your_key_here  # Optional for Weave tracing
 - **uv**: Modern Python package manager used instead of pip/conda
 - **Dependencies**: Defined in `pyproject.toml` with specific versions for reproducibility
 - **Jupyter Integration**: Custom kernel installation required for notebook work
-- **RAG Dependencies**: ChromaDB for vector database, sentence-transformers for GTE embeddings
+- **RAG Dependencies**: ChromaDB for vector database, sentence-transformers for GTE embeddings (local)
+- **Container Optimization**: Docker implementation uses ChromaDB default embeddings for efficiency
 
 ## Key Data Insights
 - **Dataset Scale**: 1,000 electronics products, 20,000 reviews spanning 2003-2023
@@ -150,12 +184,17 @@ The system handles various query types with intelligent context retrieval:
 - **Retrieval Quality**: Enhanced contextual product and review matching
 
 ## Docker Notes
-- **Multi-service setup**: Streamlit app + ChromaDB vector database
+- **Dual-architecture deployment**: Automatically uses `vector_db_docker.py` for optimized containers
+- **Multi-service setup**: Streamlit app + ChromaDB vector database service
+- **Container optimization**: Uses default embeddings (saves 670MB vs GTE-large)
+- **Service connection**: HTTP client connects to external ChromaDB service
+- **Fallback mechanism**: Graceful degradation to local storage if service unavailable
 - **Non-root security**: Uses dedicated app user for container security
 - **Persistent storage**: ChromaDB data persists in Docker volumes
-- **Environment integration**: Mounts `.env` file for API key access
+- **Environment integration**: Mounts `.env` file for API key access, detects `CHROMA_HOST`
 - **Automatic initialization**: Vector database auto-populates on first run
 - **Health checks**: Built-in service connectivity verification
 - **Network isolation**: Services communicate via dedicated Docker network
 - **TTY compatibility**: Handles production deployment issues (see DOCKER_TTY_FIXES.md)
 - **Weave tracing**: Full compatibility in containerized environments
+- **📖 Implementation details**: See `docs/LOCAL_VS_DOCKER.md` for comprehensive comparison

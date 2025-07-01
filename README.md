@@ -187,11 +187,12 @@ AI-Powered-Amazon-Product-Assistant/
 │   │   │   └── config.py                              # Multi-provider configuration
 │   │   └── streamlit_app.py                          # Main chatbot interface with RAG
 │   └── 📁 rag/
-│       ├── vector_db.py                               # ChromaDB vector database (local)
-│       ├── vector_db_docker.py                       # ChromaDB vector database (Docker)
-│       └── query_processor.py                        # RAG query processing
+│       ├── vector_db.py                               # ChromaDB vector database (local, GTE-large)
+│       ├── vector_db_docker.py                       # ChromaDB vector database (Docker, optimized)
+│       └── query_processor.py                        # RAG query processing (auto-selects implementation)
 ├── 📁 docs/                                          # Technical documentation
 │   ├── CHROMA.md                                      # ChromaDB integration guide
+│   ├── LOCAL_VS_DOCKER.md                            # Local vs Docker implementation comparison
 │   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide
 │   └── DOCKER_TTY_FIXES.md                           # Container deployment fixes
 ├── 📄 pyproject.toml                                  # uv dependencies & config
@@ -232,9 +233,9 @@ The visualization notebook provides comprehensive insights:
 
 - **Data Processing**: pandas, numpy, json
 - **Visualization**: matplotlib, seaborn, plotly
-- **Vector Database**: ChromaDB with GTE-large embeddings, persistent storage and semantic search
-- **Embedding Model**: sentence-transformers with thenlper/gte-large (1024-dimensional embeddings)
-- **RAG Implementation**: Custom query processing with intelligent context retrieval
+- **Vector Database**: Dual-architecture ChromaDB system (local: GTE-large, Docker: optimized)
+- **Embedding Models**: GTE-large (development) and ChromaDB default (production) with automatic selection
+- **RAG Implementation**: Custom query processing with intelligent context retrieval and environment detection
 - **Notebook Environment**: Jupyter, IPython
 - **Package Management**: uv (modern Python package manager)
 - **Web Interface**: Streamlit with RAG integration and configurable LLM parameters
@@ -320,12 +321,21 @@ This project includes comprehensive documentation to help you understand and wor
 
 ### [docs/CHROMA.md](docs/CHROMA.md)
 **Complete ChromaDB integration guide**
-- Local vs Docker environment setup and configuration
+- GTE-large embedding model implementation details
 - Data loading process and timeline details
 - Search capabilities and metadata schema
 - Performance monitoring and logging
 - Troubleshooting guide and best practices
 - API reference and usage examples
+
+### [docs/LOCAL_VS_DOCKER.md](docs/LOCAL_VS_DOCKER.md)
+**Local development vs Docker production comparison**
+- Dual-architecture approach explanation (vector_db.py vs vector_db_docker.py)
+- Embedding strategy differences (GTE-large vs ChromaDB default)
+- Connection architecture and storage configuration details
+- Performance comparison and resource usage analysis
+- Use case guidelines and migration considerations
+- Troubleshooting and best practices for both environments
 
 ### [docs/WEAVE_TRACING_GUIDE.md](docs/WEAVE_TRACING_GUIDE.md)
 **Comprehensive LLM tracing and monitoring guide**

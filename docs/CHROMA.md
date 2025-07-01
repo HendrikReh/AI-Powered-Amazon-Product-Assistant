@@ -36,20 +36,26 @@ ChromaDB serves as the vector database backend for our RAG (Retrieval-Augmented 
 
 ## Architecture Overview
 
-### Environment Detection
-The system automatically detects the execution environment and configures ChromaDB accordingly:
+### Dual Implementation System
+The project uses a **dual-architecture approach** with automatic environment detection:
 
 ```python
 # Environment detection logic
 is_docker = os.getenv("CHROMA_HOST") is not None
 
 if is_docker:
-    # Uses ChromaDB HTTP service
+    # Uses ChromaDB HTTP service for production
     from .vector_db_docker import ElectronicsVectorDBDocker
 else:
-    # Uses local persistent client
+    # Uses local persistent client for development
     from .vector_db import ElectronicsVectorDB
 ```
+
+**📖 For detailed comparison of local vs Docker implementations, see: [docs/LOCAL_VS_DOCKER.md](LOCAL_VS_DOCKER.md)**
+
+### Key Implementation Differences
+- **Local Development** (`vector_db.py`): GTE-large embeddings for best quality
+- **Docker Production** (`vector_db_docker.py`): Default embeddings for container optimization
 
 ## Local Development Setup
 
@@ -500,6 +506,12 @@ db.ingest_documents(documents)
 - **Migration**: New collection created for GTE embeddings (`electronics_products_reviews_gte`)
 - **Fallback**: Local storage if service unavailable
 
+## Related Documentation
+
+- **[LOCAL_VS_DOCKER.md](LOCAL_VS_DOCKER.md)**: Comprehensive comparison of local development vs Docker production implementations
+- **[WEAVE_TRACING_GUIDE.md](WEAVE_TRACING_GUIDE.md)**: LLM tracing and monitoring integration
+- **[DOCKER_TTY_FIXES.md](DOCKER_TTY_FIXES.md)**: Container deployment compatibility fixes
+
 ---
 
-For additional support or questions about ChromaDB integration, refer to the main project documentation or the ChromaDB official documentation.
+For additional support or questions about ChromaDB integration, refer to the main project documentation, the LOCAL_VS_DOCKER.md guide for implementation-specific details, or the ChromaDB official documentation.

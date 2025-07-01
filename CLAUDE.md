@@ -26,19 +26,34 @@ uv run jupyter notebook notebooks/data_preprocessing.ipynb
 # Run visualization notebooks  
 uv run jupyter notebook notebooks/data_visualization.ipynb
 
-# Test RAG system functionality
+# Test RAG system functionality (auto-detects local vs Docker implementation)
 uv run python test_rag_system.py
 
-# Initialize vector database manually
+# Initialize vector database manually (local development with GTE-large)
 uv run python src/rag/vector_db.py
+```
+
+### Evaluation & Testing
+```bash
+# Create evaluation dataset with ground truth examples
+uv run python run_evaluation.py --create-dataset
+
+# Run single query evaluation for testing
+uv run python run_evaluation.py --single-query "What are iPhone charger features?" --mock-llm
+
+# Run full RAG system evaluation using Weave
+uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+
+# Run evaluation with custom dataset
+uv run python run_evaluation.py --dataset-path "data/evaluation/custom_dataset.json" --mock-llm
 ```
 
 ### Docker Operations
 ```bash
-# Build Docker containers (Streamlit + ChromaDB)
+# Build Docker containers (Streamlit + ChromaDB service)
 make build-docker-streamlit
 
-# Run containerized services (app + vector database)
+# Run containerized services (uses vector_db_docker.py with optimized embeddings)
 make run-docker-streamlit
 
 # View application logs
@@ -65,10 +80,24 @@ make clean-notebook-outputs
 ### Core Structure
 - **Data Processing**: `notebooks/` contains Jupyter notebooks for EDA and data preprocessing
 - **Chatbot Interface**: `src/chatbot-ui/` contains Streamlit-based chat application with RAG integration
-- **RAG System**: `src/rag/` contains vector database and query processing components
+- **RAG System**: `src/rag/` contains dual vector database implementations and query processing
 - **Configuration**: `src/chatbot-ui/core/config.py` manages API keys and settings via Pydantic
 - **Processed Data**: `data/processed/` contains cleaned datasets ready for RAG implementation
-- **Vector Database**: `data/chroma_db/` contains ChromaDB persistent storage for embeddings
+- **Vector Database**: Dual storage approach (local files for dev, service for production)
+
+### Dual Vector Database Architecture
+- **Automatic Detection**: System selects implementation based on `CHROMA_HOST` environment variable
+- **Local Development** (`vector_db.py`):
+  - Uses `chromadb.PersistentClient` with local file storage
+  - GTE-large embeddings (1024 dimensions) for maximum search quality
+  - Best for development, testing, and debugging
+- **Docker Production** (`vector_db_docker.py`):
+  - Uses `chromadb.HttpClient` connecting to external ChromaDB service
+  - Default embeddings (384 dimensions) for container optimization
+  - Fallback to local storage if service unavailable
+  - Saves 670MB in container images
+- **Seamless Switching**: `query_processor.py` automatically imports correct implementation
+- **📖 Complete comparison guide**: See `docs/LOCAL_VS_DOCKER.md` for detailed analysis
 
 ### Multi-Provider LLM Support
 The chatbot supports three LLM providers with different parameter compatibility:
@@ -83,6 +112,23 @@ OPENAI_API_KEY=your_key_here
 GROQ_API_KEY=your_key_here  
 GOOGLE_API_KEY=your_key_here
 WANDB_API_KEY=your_key_here  # Optional for Weave tracing
+
+# Docker environment detection (optional)
+CHROMA_HOST=chromadb        # Triggers Docker vector database mode
+CHROMA_PORT=8000           # ChromaDB service port
+```
+
+#### Vector Database Selection Logic
+```python
+# Automatic implementation selection in query_processor.py
+is_docker = os.getenv("CHROMA_HOST") is not None
+
+if is_docker:
+    # Uses vector_db_docker.py with HTTP client and default embeddings
+    from .vector_db_docker import ElectronicsVectorDBDocker as ElectronicsVectorDB
+else:
+    # Uses vector_db.py with persistent client and GTE-large embeddings
+    from .vector_db import ElectronicsVectorDB
 ```
 
 ### Data Pipeline Architecture
@@ -93,8 +139,10 @@ WANDB_API_KEY=your_key_here  # Optional for Weave tracing
 5. **Visualization**: Comprehensive EDA with temporal, category, and rating analysis
 
 ### RAG System Architecture
-- **Vector Database**: ChromaDB with persistent storage in `data/chroma_db/`
-- **Embedding Model**: GTE-large (thenlper/gte-large) with 1024-dimensional embeddings
+- **Dual Vector Database**: Automatic environment detection for optimal implementation
+  - **Local Development**: `vector_db.py` with GTE-large embeddings (1024D) for maximum quality
+  - **Docker Production**: `vector_db_docker.py` with default embeddings (384D) for container optimization
+- **Environment Detection**: Automatic selection via `CHROMA_HOST` environment variable
 - **Document Types**: Products and review summaries with structured metadata
 - **Query Processing**: Intelligent query type detection and context-aware retrieval
 - **Search Capabilities**: Semantic search, metadata filtering, hybrid queries
@@ -118,7 +166,8 @@ WANDB_API_KEY=your_key_here  # Optional for Weave tracing
 - **uv**: Modern Python package manager used instead of pip/conda
 - **Dependencies**: Defined in `pyproject.toml` with specific versions for reproducibility
 - **Jupyter Integration**: Custom kernel installation required for notebook work
-- **RAG Dependencies**: ChromaDB for vector database, sentence-transformers for GTE embeddings
+- **RAG Dependencies**: ChromaDB for vector database, sentence-transformers for GTE embeddings (local)
+- **Container Optimization**: Docker implementation uses ChromaDB default embeddings for efficiency
 
 ## Key Data Insights
 - **Dataset Scale**: 1,000 electronics products, 20,000 reviews spanning 2003-2023
@@ -133,6 +182,31 @@ Run the data processing notebooks to verify the pipeline:
 uv run jupyter notebook notebooks/verify_api_keys.ipynb  # Test API configuration
 uv run python test_rag_system.py  # Comprehensive RAG system testing
 ```
+
+### RAG System Evaluation
+The project includes a comprehensive evaluation framework using Weave for systematic testing:
+```bash
+# Create evaluation dataset (14 examples across query types)
+uv run python run_evaluation.py --create-dataset
+
+# Quick single query test
+uv run python run_evaluation.py --single-query "Your test query" --mock-llm
+
+# Full evaluation with Weave integration
+uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+```
+
+**Evaluation Metrics:**
+- **Relevance**: Topic coverage and query alignment (0-1 score)
+- **Accuracy**: Factual correctness and product mention accuracy
+- **Completeness**: Response depth and length appropriateness
+- **Factuality**: Contradiction detection and numerical claim verification
+- **Quality**: Clarity, helpfulness, and coherence assessment
+
+**Dataset Coverage:**
+- 14 evaluation examples across 6 query types
+- Difficulties: Easy (3), Medium (6), Hard (5)
+- Query types: product_info, product_reviews, product_complaints, product_comparison, product_recommendation, use_case
 
 ## RAG Query Examples
 The system handles various query types with intelligent context retrieval:
@@ -150,12 +224,17 @@ The system handles various query types with intelligent context retrieval:
 - **Retrieval Quality**: Enhanced contextual product and review matching
 
 ## Docker Notes
-- **Multi-service setup**: Streamlit app + ChromaDB vector database
+- **Dual-architecture deployment**: Automatically uses `vector_db_docker.py` for optimized containers
+- **Multi-service setup**: Streamlit app + ChromaDB vector database service
+- **Container optimization**: Uses default embeddings (saves 670MB vs GTE-large)
+- **Service connection**: HTTP client connects to external ChromaDB service
+- **Fallback mechanism**: Graceful degradation to local storage if service unavailable
 - **Non-root security**: Uses dedicated app user for container security
 - **Persistent storage**: ChromaDB data persists in Docker volumes
-- **Environment integration**: Mounts `.env` file for API key access
+- **Environment integration**: Mounts `.env` file for API key access, detects `CHROMA_HOST`
 - **Automatic initialization**: Vector database auto-populates on first run
 - **Health checks**: Built-in service connectivity verification
 - **Network isolation**: Services communicate via dedicated Docker network
 - **TTY compatibility**: Handles production deployment issues (see DOCKER_TTY_FIXES.md)
 - **Weave tracing**: Full compatibility in containerized environments
+- **📖 Implementation details**: See `docs/LOCAL_VS_DOCKER.md` for comprehensive comparison

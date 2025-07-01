@@ -25,7 +25,36 @@ if curl -s http://chromadb:8000/api/v1/heartbeat > /dev/null 2>&1; then
     
     # Initialize ChromaDB with data if needed
     echo "🔍 Checking ChromaDB initialization..."
-    python src/rag/vector_db_docker.py
+    
+    # Check if collection already exists to avoid re-downloading models
+    python3 -c "
+import os
+import sys
+sys.path.append('src')
+try:
+    from rag.vector_db_docker import ElectronicsVectorDBDocker
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    
+    # Try to connect and check for existing collection
+    db = ElectronicsVectorDBDocker()
+    db.create_collection()
+    stats = db.get_collection_stats()
+    
+    if stats.get('total_documents', 0) == 0:
+        print('📦 Initializing vector database with documents...')
+        from rag.vector_db_docker import setup_vector_database_docker
+        setup_vector_database_docker()
+        print('✅ Vector database initialized successfully')
+    else:
+        print(f'✅ Found existing collection with {stats[\"total_documents\"]} documents')
+        
+except Exception as e:
+    print(f'⚠️  Database initialization failed: {e}')
+    print('🔄 Continuing without pre-populated database...')
+    import traceback
+    traceback.print_exc()
+"
     echo "✅ ChromaDB initialization complete"
 else
     echo "⚠️  ChromaDB service unavailable, using local storage"

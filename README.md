@@ -11,9 +11,9 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - **Complete RAG System**: Vector database with ChromaDB, intelligent query processing, and context-aware retrieval
 - **Streamlit UI**: Enhanced chat interface with RAG toggle, configurable LLM parameters, and example queries
 - **Multi-Provider Support**: Compatible with OpenAI, Groq, and Google Gemini models
-- **Vector Database**: ChromaDB-powered semantic search with metadata filtering and hybrid queries
+- **Vector Database**: ChromaDB-powered semantic search with GTE-large embeddings, metadata filtering and hybrid queries
 - **Query Intelligence**: Automatic query type detection for product reviews, comparisons, complaints, and recommendations
-- **Weave Tracing**: Optional LLM call tracking and performance monitoring via Weights & Biases
+- **Optimized Weave Tracing**: Production-ready AI pipeline monitoring with efficient session-based initialization, zero-redundancy design, and comprehensive analytics
 
 ## Out-of-Scope (B2B Scope)
 
@@ -39,6 +39,7 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - Most active day: Tuesday (3,068 reviews)
 - Most active month: January (2,283 reviews)
 - Recent activity: 37.8% of reviews from 2020 onwards
+- **Embedding Model**: GTE-large (1024 dimensions) for superior semantic search
 
 ## Setup & Installation
 
@@ -120,9 +121,9 @@ make restart-docker-streamlit
 - **ChromaDB Service**: http://localhost:8000
 - **Persistent Storage**: Vector data persisted in Docker volume
 
-### Weave Tracing Setup
+### Enhanced Weave Tracing Setup
 
-The application includes optional Weave tracing for LLM call monitoring and performance analysis.
+The application includes comprehensive Weave tracing for end-to-end AI pipeline monitoring and performance analysis.
 
 1. **Get W&B API Key**
    - Sign up at [wandb.ai](https://wandb.ai)
@@ -134,16 +135,31 @@ The application includes optional Weave tracing for LLM call monitoring and perf
    echo "WANDB_API_KEY=your_wandb_api_key" >> .env
    ```
 
-3. **Features Tracked**
-   - LLM call performance and latency
-   - Model configuration (temperature, tokens, top-p, top-k)
-   - Conversation flows and context
-   - Provider comparison (OpenAI vs Groq vs Google)
+3. **Enhanced Features Tracked**
+   - **Optimized Initialization**: Single-session setup with session state management
+   - **RAG Pipeline Tracing**: Query analysis, context building, and retrieval metrics
+   - **LLM Provider Tracking**: Detailed request/response metadata for OpenAI, Groq, and Google
+   - **Performance Analytics**: Sub-operation timing, character counts, and success rates
+   - **Error Classification**: Structured error handling with types and fallback strategies
+   - **Real-Time UI Feedback**: Processing times and operation status in sidebar
+   - **Context Quality Metrics**: Query type detection, extracted terms, and retrieval effectiveness
+   - **Trace Optimization**: Eliminated redundant calls and duplicate initialization
 
-4. **View Traces**
-   - Visit your [W&B dashboard](https://wandb.ai)
-   - Navigate to the "Bootcamp" project
-   - Explore detailed traces and performance metrics
+4. **Optimized Operation Monitoring**
+   - **Session-Based Initialization**: Single setup per session via `@st.cache_resource`
+   - **Consolidated Tracing**: Primary trace points at key pipeline stages
+   - **RAG Enhancement Metrics**: Query processing timing and context quality
+   - **LLM Provider Analytics**: Request/response data with performance breakdown
+   - **End-to-End Pipeline**: Complete timing analysis from query to response
+   - **Zero-Redundancy Design**: Eliminated multiple trace calls for same operations
+
+5. **Production-Ready Monitoring**
+   - **Optimized Trace Volume**: Meaningful traces without duplication
+   - **Session State Management**: Prevents repeated initialization calls
+   - **Clean Dashboard Data**: Visit your [W&B dashboard](https://wandb.ai) for organized traces
+   - **Performance Insights**: Navigate to "Bootcamp" project for analytics
+   - **Error Tracking**: Structured error handling with fallback strategies
+   - **Real-Time Feedback**: Processing times displayed in Streamlit sidebar
 
 ## Project Structure
 
@@ -216,13 +232,14 @@ The visualization notebook provides comprehensive insights:
 
 - **Data Processing**: pandas, numpy, json
 - **Visualization**: matplotlib, seaborn, plotly
-- **Vector Database**: ChromaDB with persistent storage and semantic search
+- **Vector Database**: ChromaDB with GTE-large embeddings, persistent storage and semantic search
+- **Embedding Model**: sentence-transformers with thenlper/gte-large (1024-dimensional embeddings)
 - **RAG Implementation**: Custom query processing with intelligent context retrieval
 - **Notebook Environment**: Jupyter, IPython
 - **Package Management**: uv (modern Python package manager)
 - **Web Interface**: Streamlit with RAG integration and configurable LLM parameters
 - **LLM Providers**: OpenAI GPT-4o, Groq Llama, Google Gemini 2.0
-- **Monitoring**: Weave tracing via Weights & Biases
+- **Monitoring**: Optimized Weave tracing via Weights & Biases with session state management
 - **Configuration**: Pydantic settings with environment variables
 - **Containerization**: Docker with non-root security
 
@@ -278,6 +295,16 @@ temporal_analysis(df_reviews)
    ```
 
 4. **Large File Handling**: The raw data files are large (25GB+). Ensure sufficient disk space and memory.
+
+5. **Multiple Weave Traces (Fixed)**: Previous versions created redundant trace calls due to improper interaction between `@st.cache_resource` and `@weave.op()` decorators. This has been resolved with session state management and optimized tracing architecture.
+
+## Recent Improvements
+
+### Weave Tracing Optimization (v0.5.0)
+- **Issue Resolved**: Eliminated multiple/redundant Weave trace calls
+- **Root Cause**: Improper interaction between Streamlit caching and Weave decorators
+- **Solution**: Session state initialization + consolidated trace entry points
+- **Result**: Clean, meaningful traces with zero redundancy
 
 ## Documentation
 

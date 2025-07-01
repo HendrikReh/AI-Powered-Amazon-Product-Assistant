@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import os
+import weave
 
 # Check if running in Docker environment
 is_docker = os.getenv("CHROMA_HOST") is not None
@@ -115,6 +116,7 @@ class RAGQueryProcessor:
             ]
         }
     
+    @weave.op()
     def analyze_query(self, query: str) -> Tuple[str, List[str]]:
         """Analyze query to determine type and extract key terms."""
         query_lower = query.lower().strip()
@@ -127,6 +129,7 @@ class RAGQueryProcessor:
         
         return "general_search", [query_lower]
     
+    @weave.op()
     def extract_product_names(self, query: str) -> List[str]:
         """Extract potential product names from query."""
         # Common product name indicators
@@ -159,6 +162,7 @@ class RAGQueryProcessor:
         
         return products
     
+    @weave.op()
     def build_context(self, query: str, max_products: int = 5, max_reviews: int = 3) -> QueryContext:
         """Build context for RAG query."""
         if not self.vector_db:
@@ -288,6 +292,7 @@ class RAGQueryProcessor:
             metadata=metadata
         )
     
+    @weave.op()
     def _format_search_results(self, search_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Format search results into a consistent structure."""
         formatted = []
@@ -312,6 +317,7 @@ class RAGQueryProcessor:
         
         return formatted
     
+    @weave.op()
     def generate_rag_prompt(self, context: QueryContext) -> str:
         """Generate enhanced prompt with RAG context."""
         prompt_parts = [
@@ -361,6 +367,7 @@ class RAGQueryProcessor:
         
         return "\n".join(prompt_parts)
     
+    @weave.op()
     def process_query(self, query: str) -> Dict[str, Any]:
         """Process a complete RAG query."""
         try:
@@ -391,6 +398,7 @@ class RAGQueryProcessor:
             }
 
 
+@weave.op()
 def create_rag_processor(jsonl_path: str = "data/processed/electronics_rag_documents.jsonl") -> RAGQueryProcessor:
     """Create and initialize RAG query processor."""
     return RAGQueryProcessor()

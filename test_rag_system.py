@@ -5,11 +5,35 @@ Tests core functionality and performance.
 
 import time
 import logging
+import weave
+import sys
+from pathlib import Path
+
+# Add the chatbot-ui directory to sys.path to import config
+chatbot_ui_dir = Path(__file__).parent / "src" / "chatbot-ui"
+sys.path.append(str(chatbot_ui_dir))
+
 from src.rag.query_processor import create_rag_processor
+from core.config import config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Initialize Weave for tracing (following streamlit_app.py pattern)
+if config.WANDB_API_KEY:
+    try:
+        import wandb
+        # Login to W&B with API key before initializing Weave
+        wandb.login(key=config.WANDB_API_KEY, anonymous="never", force=True)
+        weave.init(project_name="Bootcamp")
+        logger.info("🔍 Weave tracing enabled")
+    except Exception as e:
+        logger.error(f"❌ Weave initialization failed: {str(e)}")
+        logger.info("Continuing without tracing...")
+else:
+    logger.info("ℹ️ Weave tracing disabled (no WANDB_API_KEY)")
+
+@weave.op()
 def test_rag_system():
     """Test the RAG system with various query types."""
     print("🔍 Testing RAG System for Amazon Electronics Assistant")

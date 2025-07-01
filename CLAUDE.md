@@ -94,23 +94,31 @@ WANDB_API_KEY=your_key_here  # Optional for Weave tracing
 
 ### RAG System Architecture
 - **Vector Database**: ChromaDB with persistent storage in `data/chroma_db/`
+- **Embedding Model**: GTE-large (thenlper/gte-large) with 1024-dimensional embeddings
 - **Document Types**: Products and review summaries with structured metadata
 - **Query Processing**: Intelligent query type detection and context-aware retrieval
 - **Search Capabilities**: Semantic search, metadata filtering, hybrid queries
 - **Integration**: Seamless integration with existing LLM providers via enhanced prompts
 
 ### Weave Tracing Integration
-- **Tracing Decorator**: `@weave.op()` on `run_llm()` function tracks all LLM calls
-- **W&B Project**: Traces logged to "Bootcamp" project
-- **Configuration Tracking**: All model parameters (temperature, tokens, top_p, top_k) captured
-- **Error Handling**: Graceful degradation when WANDB_API_KEY unavailable
-- **Docker Support**: Special TTY handling for containerized environments
+- **Enhanced Multi-Operation Tracing**: Granular `@weave.op()` decorators on individual pipeline components
+- **Initialization Tracing**: `initialize_weave_tracing()` and `initialize_rag_processor()` with status tracking
+- **RAG Enhancement Tracing**: `apply_rag_enhancement()` with timing, context metrics, and error handling
+- **Provider-Specific LLM Tracing**: `call_llm_provider()` with request metadata, response metrics, and error types
+- **Comprehensive Pipeline Monitoring**: Enhanced `run_llm()` with end-to-end timing and component breakdown
+- **Real-Time UI Feedback**: Sidebar displays processing times, retrieval counts, and operation status
+- **Detailed Metadata Capture**: Query types, extracted terms, context quality, and provider-specific parameters
+- **Performance Analytics**: Sub-operation timing (RAG vs LLM), character counts, and success/failure rates
+- **Error Classification**: Structured error handling with error types, fallback strategies, and user feedback
+- **W&B Dashboard Integration**: Rich trace data with nested operations and comprehensive metadata
+- **Production Monitoring**: Zero-impact tracing with graceful degradation and optional activation
+- **Docker Compatibility**: Full containerized deployment support with trace persistence
 
 ### Package Management
 - **uv**: Modern Python package manager used instead of pip/conda
 - **Dependencies**: Defined in `pyproject.toml` with specific versions for reproducibility
 - **Jupyter Integration**: Custom kernel installation required for notebook work
-- **RAG Dependencies**: ChromaDB for vector database, automatic embedding generation
+- **RAG Dependencies**: ChromaDB for vector database, sentence-transformers for GTE embeddings
 
 ## Key Data Insights
 - **Dataset Scale**: 1,000 electronics products, 20,000 reviews spanning 2003-2023
@@ -135,10 +143,11 @@ The system handles various query types with intelligent context retrieval:
 - **Budget Recommendations**: "Recommend a budget-friendly tablet under $100"
 
 ## RAG Performance Metrics
-- **Response Time**: ~0.16 seconds average per query
+- **Response Time**: ~0.29 seconds average per query (improved accuracy with GTE)
 - **Database Size**: 2,000 documents (1,000 products + 1,000 reviews)
 - **Success Rate**: 100% across all query types
-- **Retrieval Quality**: Contextual product and review matching
+- **Embedding Model**: GTE-large (1024 dimensions) for superior semantic understanding
+- **Retrieval Quality**: Enhanced contextual product and review matching
 
 ## Docker Notes
 - **Multi-service setup**: Streamlit app + ChromaDB vector database

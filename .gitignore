@@ -7,3 +7,7 @@
 .DS_Store
 /data/Electronics.jsonl
 /data/meta_Electronics.jsonl
+__pycache__
+/data/chroma_db
+/data
+/src/rag/__pycache__

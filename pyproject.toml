@@ -1,6 +1,6 @@
 [project]
 name = "ai-powered-amazon-product-assistant"
-version = "0.2.0"
+version = "0.5.1"
 description = "An end-to-end AI engineering project that builds an intelligent product recommendation and analysis system using Amazon Electronics dataset with RAG, multi-provider LLM support, and comprehensive tracing."
 readme = "README.md"
 authors = [
@@ -21,6 +21,7 @@ dependencies = [
     "pydantic",
     "pydantic-settings",
     "seaborn>=0.13.2",
+    "sentence-transformers>=3.0.0",
     "streamlit",
     "tqdm>=4.67.1",
     "weave>=0.51.54",

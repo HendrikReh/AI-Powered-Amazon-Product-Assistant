@@ -426,6 +426,15 @@ This project includes comprehensive documentation to help you understand and wor
 - Performance benchmarks and customization guide
 - Continuous integration setup and troubleshooting
 
+### [docs/SYNTHETIC_DATA.md](docs/SYNTHETIC_DATA.md)
+**Synthetic test data generation guide**
+- Advanced synthetic data generation with template-based queries and variation techniques
+- Configurable generation parameters: difficulty distribution, query types, and variation methods
+- Quality validation tools: uniqueness analysis, length distribution, and topic coverage
+- Weave integration for full traceability and performance monitoring
+- Mixed dataset creation combining original and synthetic data for robust testing
+- Best practices implementation and troubleshooting guide
+
 ### [docs/DOCKER_TTY_FIXES.md](docs/DOCKER_TTY_FIXES.md)
 **Containerized deployment compatibility guide**
 - Docker TTY issues and solutions for production deployment

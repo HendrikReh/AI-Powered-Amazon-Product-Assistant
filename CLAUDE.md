@@ -46,6 +46,15 @@ uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
 
 # Run evaluation with custom dataset
 uv run python run_evaluation.py --dataset-path "data/evaluation/custom_dataset.json" --mock-llm
+
+# Generate and evaluate synthetic test data
+uv run python run_synthetic_evaluation.py --synthetic-only --num-synthetic 50
+
+# Create mixed dataset (original + synthetic)
+uv run python run_synthetic_evaluation.py --mixed-dataset --save-datasets
+
+# Run synthetic data examples and demonstrations
+uv run python examples/synthetic_data_examples.py
 ```
 
 ### Docker Operations
@@ -196,6 +205,22 @@ uv run python run_evaluation.py --single-query "Your test query" --mock-llm
 uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
 ```
 
+### Synthetic Test Data Generation
+The project includes advanced synthetic data generation for comprehensive testing:
+```bash
+# Generate synthetic-only evaluation
+uv run python run_synthetic_evaluation.py --synthetic-only --num-synthetic 30
+
+# Create mixed dataset (original + synthetic)
+uv run python run_synthetic_evaluation.py --mixed-dataset --save-datasets
+
+# Custom difficulty distribution
+uv run python run_synthetic_evaluation.py --difficulty-easy 0.2 --difficulty-hard 0.4
+
+# Run comprehensive examples
+uv run python examples/synthetic_data_examples.py
+```
+
 **Evaluation Metrics:**
 - **Relevance**: Topic coverage and query alignment (0-1 score)
 - **Accuracy**: Factual correctness and product mention accuracy
@@ -207,6 +232,16 @@ uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
 - 14 evaluation examples across 6 query types
 - Difficulties: Easy (3), Medium (6), Hard (5)
 - Query types: product_info, product_reviews, product_complaints, product_comparison, product_recommendation, use_case
+
+### Synthetic Data Generation Framework
+Advanced synthetic test data creation with multiple techniques:
+- **Template-Based Generation**: 6 query types across 10 product categories
+- **Variation Techniques**: Rephrase, specificity, context, perspective transformations
+- **Quality Analysis**: Uniqueness, length distribution, topic coverage validation
+- **Weave Integration**: Full traceability and metadata tracking
+- **Mixed Datasets**: Combine original and synthetic for robust testing
+- **Configurable Parameters**: Difficulty distribution, query type weights, generation methods
+- **Best Practices**: Automated quality validation and comparative analysis
 
 ## RAG Query Examples
 The system handles various query types with intelligent context retrieval:
@@ -222,6 +257,17 @@ The system handles various query types with intelligent context retrieval:
 - **Success Rate**: 100% across all query types
 - **Embedding Model**: GTE-large (1024 dimensions) for superior semantic understanding
 - **Retrieval Quality**: Enhanced contextual product and review matching
+
+## Synthetic Data Generation
+- **Template-Based Generation**: 6 query types with realistic product categories
+- **Variation Techniques**: 4 approaches for query diversity (rephrase, specificity, context, perspective)
+- **Quality Validation**: Automated analysis of uniqueness, length, and topic coverage
+- **Weave Integration**: Full operation tracking and metadata capture
+- **Mixed Datasets**: Combine original and synthetic data for comprehensive testing
+- **Configurable Generation**: Customizable difficulty distributions and query type weights
+- **Best Practices Implementation**: Following synthetic data generation standards
+- **Production Testing**: Automated test case creation for systematic evaluation
+- **📖 Complete guide**: See `docs/SYNTHETIC_DATA.md` for detailed implementation
 
 ## Docker Notes
 - **Dual-architecture deployment**: Automatically uses `vector_db_docker.py` for optimized containers

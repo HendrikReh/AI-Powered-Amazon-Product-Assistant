@@ -385,10 +385,26 @@ This project includes comprehensive documentation to help you understand and wor
 ### [PROJECT_CANVAS.md](PROJECT_CANVAS.md)
 **Project roadmap and task tracking**
 - Complete project overview and goals
-- Sprint 0 deliverables with detailed task breakdown
+- Sprint 0 and Sprint 1 deliverables with detailed task breakdowns
 - EDA findings and dataset analysis summary
 - Configuration features and tracing implementation status
 - Success criteria and architecture decisions
+
+### [docs/SPRINT_0.md](docs/SPRINT_0.md)
+**Sprint 0 foundation summary**
+- Foundational components completed (June 28, 2025)
+- Data processing pipeline, LLM configuration, monitoring setup
+- Project setup, environment configuration, and architecture planning
+- Technical achievements and development infrastructure
+- Foundation established for RAG implementation
+
+### [docs/SPRINT_1.md](docs/SPRINT_1.md)
+**Sprint 1 RAG prototype implementation**
+- Complete RAG system implementation following course requirements
+- Vector database setup, basic RAG pipeline, instrumentation, and evaluation
+- All 4 instructor-specified tasks completed (Lessons 3-6)
+- Advanced features beyond scope: query intelligence, dual-architecture, synthetic data
+- W&B integration with comprehensive evaluation framework
 
 ### [docs/CHROMA.md](docs/CHROMA.md)
 **Complete ChromaDB integration guide**

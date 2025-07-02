@@ -215,6 +215,8 @@ AI-Powered-Amazon-Product-Assistant/
 ├── 📁 examples/
 │   └── synthetic_data_examples.py                    # Synthetic data usage demonstrations
 ├── 📁 docs/                                          # Technical documentation
+│   ├── SPRINT_0.md                                   # Sprint 0 foundation summary (June 28, 2025)
+│   ├── SPRINT_1.md                                   # Sprint 1 RAG implementation summary
 │   ├── CHROMA.md                                      # ChromaDB integration guide
 │   ├── LOCAL_VS_DOCKER.md                            # Local vs Docker implementation comparison
 │   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide

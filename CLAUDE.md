@@ -15,10 +15,15 @@ uv run python -m ipykernel install --user --name ai-product-assistant
 
 ### Running Applications
 ```bash
-# Run Streamlit chatbot interface with RAG
+# Run enhanced Streamlit chatbot interface with RAG and tab-based UI
 uv run streamlit run src/chatbot-ui/streamlit_app.py
 # OR using Makefile
 make run-streamlit
+
+# Features:
+# - 🔧 Configuration Tab: Model settings, RAG configuration, system status
+# - 💬 Query Tab: Enhanced chat interface with smart suggestions and filters
+# - 📊 Monitoring Tab: Real-time performance metrics and Weave tracing
 
 # Run data processing notebooks
 uv run jupyter notebook notebooks/data_preprocessing.ipynb

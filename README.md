@@ -9,7 +9,7 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - **Data Processing Pipeline**: Automated processing of large-scale Amazon product and review data
 - **Interactive Visualizations**: Comprehensive analysis dashboards with temporal trends, category insights, and rating patterns  
 - **Complete RAG System**: Vector database with ChromaDB, intelligent query processing, and context-aware retrieval
-- **Streamlit UI**: Enhanced chat interface with RAG toggle, configurable LLM parameters, and example queries
+- **Advanced Streamlit UI**: Professional tab-based interface with smart query suggestions, real-time monitoring, and enhanced response visualization
 - **Multi-Provider Support**: Compatible with OpenAI, Groq, and Google Gemini models
 - **Vector Database**: ChromaDB-powered semantic search with GTE-large embeddings, metadata filtering and hybrid queries
 - **Query Intelligence**: Automatic query type detection for product reviews, comparisons, complaints, and recommendations
@@ -93,7 +93,7 @@ An end-to-end AI engineering project that builds an intelligent product recommen
    # Visualization dashboard
    uv run jupyter notebook notebooks/data_visualization.ipynb
    
-   # Streamlit chatbot interface with RAG
+   # Enhanced Streamlit chatbot interface with tab-based UI and RAG
    uv run streamlit run src/chatbot-ui/streamlit_app.py
    
    # Test RAG system functionality
@@ -133,9 +133,33 @@ make restart-docker-streamlit
 ```
 
 **Docker Services:**
-- **Streamlit App**: http://localhost:8501 
+- **Streamlit App**: http://localhost:8501 (Enhanced tab-based interface)
 - **ChromaDB Service**: http://localhost:8000
 - **Persistent Storage**: Vector data persisted in Docker volume
+
+### Enhanced Streamlit Interface
+
+The application features a professional tab-based interface designed for optimal user experience:
+
+**🔧 Configuration Tab:**
+- **System Status**: Real-time monitoring of Weave tracing and RAG system initialization
+- **Model Selection**: Choose from OpenAI (GPT-4o, GPT-4o-mini), Groq (Llama-3.3-70b), or Google (Gemini-2.0-flash)
+- **Parameter Controls**: Fine-tune temperature, max tokens, top-p, and top-k with provider-specific support
+- **RAG Configuration**: Enable/disable RAG with customizable product and review limits
+
+**💬 Query Tab:**
+- **Smart Examples**: 12+ categorized example queries across 6 use cases (Product Info, Reviews, Comparisons, Complaints, Recommendations, Use Cases)
+- **Query History**: Access and reuse your last 10 queries with one click
+- **Auto-Suggestions**: Get intelligent query completions based on partial input (3+ characters)
+- **Quick Filters**: Filter by query type, product category, and price range
+- **Enhanced Input**: Dynamic placeholders and integrated filter display
+
+**📊 Monitoring Tab:**
+- **Session Statistics**: Track message counts, query history, and usage patterns
+- **Real-Time Performance**: View RAG vs LLM processing times with percentage breakdown
+- **RAG Analytics**: Monitor retrieved products/reviews and query type detection
+- **System Health**: Check API configurations and system component status
+- **Weave Integration**: Direct links to W&B dashboard for detailed trace analysis
 
 ### Enhanced Weave Tracing Setup
 
@@ -215,6 +239,8 @@ AI-Powered-Amazon-Product-Assistant/
 ├── 📁 examples/
 │   └── synthetic_data_examples.py                    # Synthetic data usage demonstrations
 ├── 📁 docs/                                          # Technical documentation
+│   ├── SPRINT_0.md                                   # Sprint 0 foundation summary (June 28, 2025)
+│   ├── SPRINT_1.md                                   # Sprint 1 RAG implementation summary
 │   ├── CHROMA.md                                      # ChromaDB integration guide
 │   ├── LOCAL_VS_DOCKER.md                            # Local vs Docker implementation comparison
 │   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide
@@ -266,7 +292,7 @@ The visualization notebook provides comprehensive insights:
 - **RAG Implementation**: Custom query processing with intelligent context retrieval and environment detection
 - **Notebook Environment**: Jupyter, IPython
 - **Package Management**: uv (modern Python package manager)
-- **Web Interface**: Streamlit with RAG integration and configurable LLM parameters
+- **Web Interface**: Professional Streamlit UI with tab-based architecture, smart query suggestions, and real-time monitoring
 - **LLM Providers**: OpenAI GPT-4o, Groq Llama, Google Gemini 2.0
 - **Monitoring**: Optimized Weave tracing via Weights & Biases with session state management
 - **Configuration**: Pydantic settings with environment variables
@@ -371,6 +397,13 @@ temporal_analysis(df_reviews)
 5. **Multiple Weave Traces (Fixed)**: Previous versions created redundant trace calls due to improper interaction between `@st.cache_resource` and `@weave.op()` decorators. This has been resolved with session state management and optimized tracing architecture.
 
 ## Recent Improvements
+
+### Enhanced Streamlit UI (v0.6.0)
+- **New Feature**: Professional tab-based interface architecture
+- **Smart Query Features**: Auto-suggestions, query history, and intelligent filters
+- **Real-Time Monitoring**: Performance metrics, RAG analytics, and system health dashboard
+- **Enhanced Response Display**: Context cards, structured information, and query analysis
+- **Improved UX**: Organized configuration, categorized examples, and responsive design
 
 ### Weave Tracing Optimization (v0.5.0)
 - **Issue Resolved**: Eliminated multiple/redundant Weave trace calls

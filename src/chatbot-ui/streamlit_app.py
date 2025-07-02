@@ -6,6 +6,7 @@ from google import genai
 import sys
 import time
 from pathlib import Path
+from typing import List
 
 # Add the parent directory to sys.path to import from rag module
 parent_dir = Path(__file__).parent.parent
@@ -13,6 +14,115 @@ sys.path.append(str(parent_dir))
 
 from core.config import config
 from rag.query_processor import create_rag_processor
+
+def get_llm_client():
+    """Get or create LLM client based on current provider."""
+    provider = st.session_state.get('provider', 'OpenAI')
+    if provider == "OpenAI":
+        return OpenAI(api_key=config.OPENAI_API_KEY)
+    elif provider == "Groq":
+        return Groq(api_key=config.GROQ_API_KEY)
+    else:
+        return genai.Client(api_key=config.GOOGLE_API_KEY)
+
+def get_query_suggestions(partial_query: str, rag_processor) -> List[str]:
+    """Generate query suggestions based on partial input and product database."""
+    if not rag_processor or not partial_query or len(partial_query) < 3:
+        return []
+    
+    # Common product terms that might trigger suggestions
+    product_terms = {
+        "iphone": ["iPhone charger cables", "iPhone accessories", "iPhone cases"],
+        "cable": ["USB cables", "Ethernet cables", "charging cables", "Lightning cables"],
+        "headphone": ["wireless headphones", "noise-canceling headphones", "gaming headphones"],
+        "tablet": ["budget tablets", "iPad alternatives", "Android tablets"],
+        "laptop": ["laptop backpacks", "laptop accessories", "budget laptops"],
+        "router": ["wireless routers", "gaming routers", "mesh routers"],
+        "charger": ["phone chargers", "wireless chargers", "fast chargers"],
+        "speaker": ["Bluetooth speakers", "smart speakers", "portable speakers"],
+        "keyboard": ["mechanical keyboards", "gaming keyboards", "wireless keyboards"],
+        "mouse": ["gaming mice", "wireless mice", "ergonomic mice"]
+    }
+    
+    suggestions = []
+    partial_lower = partial_query.lower()
+    
+    for term, product_suggestions in product_terms.items():
+        if term in partial_lower:
+            for suggestion in product_suggestions:
+                if suggestion.lower() not in partial_lower:
+                    suggestions.append(f"What do people say about {suggestion}?")
+                    suggestions.append(f"Compare {suggestion} with alternatives")
+                    if len(suggestions) >= 6:  # Limit suggestions
+                        break
+            break
+    
+    return suggestions[:6]  # Maximum 6 suggestions
+
+def display_enhanced_response(response: str, rag_context=None):
+    """Display response with enhanced formatting and context cards."""
+    
+    # Display the main response
+    st.markdown(response)
+    
+    # If RAG context is available, show additional context
+    if rag_context and hasattr(st.session_state, 'last_rag_result'):
+        rag_result = st.session_state.last_rag_result
+        context = rag_result["context"]
+        
+        if context["num_products"] > 0 or context["num_reviews"] > 0:
+            with st.expander("🔍 Retrieved Context", expanded=False):
+                
+                # Create tabs for products and reviews
+                if context["num_products"] > 0 and context["num_reviews"] > 0:
+                    prod_tab, review_tab = st.tabs(["📦 Products", "⭐ Reviews"])
+                elif context["num_products"] > 0:
+                    prod_tab = st.container()
+                    review_tab = None
+                elif context["num_reviews"] > 0:
+                    review_tab = st.container()
+                    prod_tab = None
+                
+                # Display product cards
+                if context["num_products"] > 0 and prod_tab is not None:
+                    with prod_tab:
+                        st.write(f"**Found {context['num_products']} relevant products:**")
+                        
+                        # Create a simple product card layout
+                        for i in range(min(context["num_products"], 3)):  # Show max 3 products
+                            with st.container():
+                                st.write(f"**Product {i+1}**")
+                                # Note: In a real implementation, you'd extract this from the RAG context
+                                # For now, we'll show a placeholder since the actual product data 
+                                # would need to be passed through the context
+                                st.caption("📊 Product information retrieved from database")
+                                st.divider()
+                
+                # Display review summaries
+                if context["num_reviews"] > 0 and review_tab is not None:
+                    with review_tab:
+                        st.write(f"**Found {context['num_reviews']} relevant review summaries:**")
+                        
+                        # Create review summary cards
+                        for i in range(min(context["num_reviews"], 3)):  # Show max 3 reviews
+                            with st.container():
+                                st.write(f"**Review Summary {i+1}**")
+                                st.caption("💬 Customer feedback summary from database")
+                                st.divider()
+                
+                # Show query analysis
+                st.subheader("🎯 Query Analysis")
+                analysis_col1, analysis_col2 = st.columns(2)
+                
+                with analysis_col1:
+                    st.write(f"**Query Type:** {context['query_type']}")
+                    st.write(f"**Processing Time:** {rag_result['processing_time_ms']}ms")
+                
+                with analysis_col2:
+                    if context.get('extracted_terms'):
+                        st.write(f"**Extracted Terms:** {', '.join(context['extracted_terms'])}")
+                    else:
+                        st.write("**Extracted Terms:** None detected")
 
 def initialize_rag_processor():
     """Initialize RAG processor (cached wrapper handles tracing)."""
@@ -220,16 +330,12 @@ def run_llm(client, messages):
                     "content": rag_result["enhanced_prompt"]
                 }
                 
-                # Show RAG context info in sidebar
-                with st.sidebar:
-                    context = rag_result["context"]
-                    st.success(f"🔍 RAG: Found {context['num_products']} products, {context['num_reviews']} reviews")
-                    st.caption(f"Query type: {context['query_type']}")
-                    st.caption(f"Processing: {rag_result['processing_time_ms']}ms")
+                # Store RAG context info for monitoring tab
+                st.session_state.last_rag_result = rag_result
             
             elif rag_result["status"] == "error":
-                # Show RAG error in sidebar
-                st.sidebar.error(f"RAG error: {rag_result['error']}")
+                # Store RAG error for monitoring tab
+                st.session_state.last_rag_error = rag_result["error"]
     
     # Call LLM provider with tracing
     llm_result = call_llm_provider(
@@ -247,12 +353,13 @@ def run_llm(client, messages):
         "success": llm_result["status"] == "success"
     }
     
-    # Log trace summary to sidebar if successful
+    # Store performance metrics for monitoring tab
     if llm_result["status"] == "success":
-        with st.sidebar:
-            st.caption(f"⚡ Total time: {final_trace['total_time_ms']}ms")
-            if rag_result and rag_result["status"] == "success":
-                st.caption(f"📊 RAG: {rag_result['processing_time_ms']}ms | LLM: {llm_result['response_time_ms']}ms")
+        st.session_state.last_performance = {
+            "total_time_ms": final_trace['total_time_ms'],
+            "rag_time_ms": rag_result['processing_time_ms'] if rag_result and rag_result["status"] == "success" else 0,
+            "llm_time_ms": llm_result['response_time_ms']
+        }
     
     # Return response or handle error
     if llm_result["status"] == "success":
@@ -286,144 +393,6 @@ else:
     rag_init_result = st.session_state.rag_init_result
     rag_processor = st.session_state.rag_processor
 
-# Display initialization status in sidebar
-if weave_result["status"] == "success":
-    st.sidebar.success(weave_result["message"])
-elif weave_result["status"] == "error":
-    st.sidebar.error(weave_result["message"])
-    st.sidebar.info(weave_result["fallback"])
-else:
-    st.sidebar.info(weave_result["message"])
-
-if rag_init_result["status"] == "success" and rag_init_result["has_vector_db"]:
-    st.sidebar.success("🔍 RAG system initialized")
-elif rag_init_result["status"] == "success":
-    st.sidebar.warning("⚠️ RAG processor created but vector DB unavailable")
-else:
-    st.sidebar.error(f"❌ RAG initialization failed: {rag_init_result.get('error', 'Unknown error')}")
-
-## Lets create a sidebar with a dropdown for the model list and providers
-with st.sidebar:
-    st.title("Settings")
-
-    #Dropdown for model
-    provider = st.selectbox("Provider", ["OpenAI", "Groq", "Google"])
-    if provider == "OpenAI":
-        model_name = st.selectbox("Model", ["gpt-4o-mini", "gpt-4o"])
-    elif provider == "Groq":
-        model_name = st.selectbox("Model", ["llama-3.3-70b-versatile"])
-    else:
-        model_name = st.selectbox("Model", ["gemini-2.0-flash"])
-
-    # Save provider and model to session state
-    st.session_state.provider = provider
-    st.session_state.model_name = model_name
-    
-    st.divider()
-    
-    # Configuration sliders
-    st.subheader("Model Configuration")
-    
-    # Temperature slider
-    temperature = st.slider(
-        "Temperature",
-        min_value=0.0,
-        max_value=2.0,
-        value=0.7,
-        step=0.1,
-        help="Controls randomness: 0 = focused, 2 = very creative"
-    )
-    st.session_state.temperature = temperature
-    
-    # Max tokens slider
-    max_tokens = st.slider(
-        "Max Tokens",
-        min_value=50,
-        max_value=2000,
-        value=500,
-        step=50,
-        help="Maximum length of the response"
-    )
-    st.session_state.max_tokens = max_tokens
-    
-    # Top-p slider
-    top_p = st.slider(
-        "Top-p (Nucleus Sampling)",
-        min_value=0.0,
-        max_value=1.0,
-        value=1.0,
-        step=0.05,
-        help="Controls diversity: lower values = more focused, higher values = more diverse"
-    )
-    st.session_state.top_p = top_p
-    
-    # Top-k slider
-    top_k = st.slider(
-        "Top-k",
-        min_value=1,
-        max_value=100,
-        value=40,
-        step=1,
-        help="Limits vocabulary to top k tokens (Google only)"
-    )
-    st.session_state.top_k = top_k
-    
-    # Display current configuration
-    st.divider()
-    st.caption(f"🎛️ Config: Temp={temperature} | Tokens={max_tokens} | Top-p={top_p} | Top-k={top_k}")
-    
-    # Parameter support info
-    if provider == "Google":
-        st.caption("✅ All parameters supported")
-    else:
-        st.caption("⚠️ Top-k not supported by OpenAI/Groq")
-    
-    # RAG Settings
-    st.divider()
-    st.subheader("RAG Settings")
-    
-    # RAG toggle
-    use_rag = st.checkbox(
-        "Enable RAG (Product Search)",
-        value=True,
-        help="Use product database for enhanced responses about electronics"
-    )
-    st.session_state.use_rag = use_rag
-    
-    if use_rag and st.session_state.get('rag_processor'):
-        # RAG configuration options
-        max_products = st.slider(
-            "Max Products",
-            min_value=1,
-            max_value=10,
-            value=5,
-            help="Maximum number of products to retrieve"
-        )
-        st.session_state.max_products = max_products
-        
-        max_reviews = st.slider(
-            "Max Reviews",
-            min_value=1,
-            max_value=8,
-            value=3,
-            help="Maximum number of review summaries to retrieve"
-        )
-        st.session_state.max_reviews = max_reviews
-        
-        st.caption("🛍️ RAG will search electronics database for relevant context")
-    elif use_rag and not st.session_state.get('rag_processor'):
-        st.error("RAG system not available - check data files")
-    else:
-        st.caption("🤖 Standard chatbot mode")
-
-
-if st.session_state.provider == "OpenAI":
-    client = OpenAI(api_key=config.OPENAI_API_KEY)
-elif st.session_state.provider == "Groq":
-    client = Groq(api_key=config.GROQ_API_KEY)
-else:
-    client = genai.Client(api_key=config.GOOGLE_API_KEY)
-
 # Set up page title and description
 st.title("🛍️ Amazon Electronics Assistant")
 if st.session_state.get('rag_processor'):
@@ -431,69 +400,491 @@ if st.session_state.get('rag_processor'):
 else:
     st.caption("General AI assistant (RAG not available)")
 
-# Add some example queries for RAG
-if st.session_state.get('rag_processor') and st.session_state.get('use_rag', False):
-    with st.expander("💡 Try these example queries"):
-        example_queries = [
-            "What do people say about iPhone charger cables?",
-            "Compare Fire TV and regular tablets",
-            "Is the Ethernet cable good for gaming?",
-            "What are the main complaints about laptop backpacks?",
-            "Recommend a budget-friendly tablet under $100"
-        ]
-        
-        cols = st.columns(2)
-        for i, query in enumerate(example_queries):
-            with cols[i % 2]:
-                if st.button(query, key=f"example_{i}"):
-                    st.session_state.prefilled_query = query
-                    st.rerun()
+# Create main tab interface
+tab_query, tab_config, tab_monitoring = st.tabs(["💬 Query", "🔧 Configuration", "📊 Monitoring"])
 
-if "messages" not in st.session_state:
-    welcome_msg = "Hello! I'm your Amazon Electronics Assistant. "
-    if st.session_state.get('rag_processor'):
-        welcome_msg += "Ask me about electronics products, reviews, comparisons, and recommendations from our database of 1,000 products and 20,000 reviews!"
-    else:
-        welcome_msg += "How can I assist you today?"
+with tab_config:
+    st.header("System Configuration")
     
-    st.session_state.messages = [{"role": "assistant", "content": welcome_msg}]
+    # System Status Section
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("🔍 System Status")
+        
+        # Weave Status
+        if weave_result["status"] == "success":
+            st.success(weave_result["message"])
+        elif weave_result["status"] == "error":
+            st.error(weave_result["message"])
+            st.info(weave_result["fallback"])
+        else:
+            st.info(weave_result["message"])
+        
+        # RAG Status
+        if rag_init_result["status"] == "success" and rag_init_result["has_vector_db"]:
+            st.success("🔍 RAG system initialized")
+        elif rag_init_result["status"] == "success":
+            st.warning("⚠️ RAG processor created but vector DB unavailable")
+        else:
+            st.error(f"❌ RAG initialization failed: {rag_init_result.get('error', 'Unknown error')}")
+    
+    with col2:
+        st.subheader("🤖 Model Selection")
+        
+        # Provider and model selection
+        provider = st.selectbox("Provider", ["OpenAI", "Groq", "Google"])
+        
+        if provider == "OpenAI":
+            model_name = st.selectbox("Model", ["gpt-4o-mini", "gpt-4o"])
+        elif provider == "Groq":
+            model_name = st.selectbox("Model", ["llama-3.3-70b-versatile"])
+        else:
+            model_name = st.selectbox("Model", ["gemini-2.0-flash"])
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        # Save provider and model to session state
+        st.session_state.provider = provider
+        st.session_state.model_name = model_name
+        
+        # Parameter support info
+        if provider == "Google":
+            st.success("✅ All parameters supported")
+        else:
+            st.warning("⚠️ Top-k not supported by OpenAI/Groq")
+    
+    st.divider()
+    
+    # Model Parameters Section
+    st.subheader("⚙️ Model Parameters")
+    
+    param_col1, param_col2 = st.columns(2)
+    
+    with param_col1:
+        # Temperature slider
+        temperature = st.slider(
+            "Temperature",
+            min_value=0.0,
+            max_value=2.0,
+            value=st.session_state.get('temperature', 0.7),
+            step=0.1,
+            help="Controls randomness: 0 = focused, 2 = very creative"
+        )
+        st.session_state.temperature = temperature
+        
+        # Max tokens slider
+        max_tokens = st.slider(
+            "Max Tokens",
+            min_value=50,
+            max_value=2000,
+            value=st.session_state.get('max_tokens', 500),
+            step=50,
+            help="Maximum length of the response"
+        )
+        st.session_state.max_tokens = max_tokens
+    
+    with param_col2:
+        # Top-p slider
+        top_p = st.slider(
+            "Top-p (Nucleus Sampling)",
+            min_value=0.0,
+            max_value=1.0,
+            value=st.session_state.get('top_p', 1.0),
+            step=0.05,
+            help="Controls diversity: lower values = more focused, higher values = more diverse"
+        )
+        st.session_state.top_p = top_p
+        
+        # Top-k slider
+        top_k = st.slider(
+            "Top-k",
+            min_value=1,
+            max_value=100,
+            value=st.session_state.get('top_k', 40),
+            step=1,
+            help="Limits vocabulary to top k tokens (Google only)"
+        )
+        st.session_state.top_k = top_k
+    
+    # Display current configuration
+    st.info(f"🎛️ Current Config: Temp={temperature} | Tokens={max_tokens} | Top-p={top_p} | Top-k={top_k}")
+    
+    st.divider()
+    
+    # RAG Configuration Section
+    st.subheader("🔍 RAG Configuration")
+    
+    rag_col1, rag_col2 = st.columns(2)
+    
+    with rag_col1:
+        # RAG toggle
+        use_rag = st.checkbox(
+            "Enable RAG (Product Search)",
+            value=st.session_state.get('use_rag', True),
+            help="Use product database for enhanced responses about electronics"
+        )
+        st.session_state.use_rag = use_rag
+        
+        if use_rag and st.session_state.get('rag_processor'):
+            st.success("🛍️ RAG will search electronics database for relevant context")
+        elif use_rag and not st.session_state.get('rag_processor'):
+            st.error("RAG system not available - check data files")
+        else:
+            st.info("🤖 Standard chatbot mode")
+    
+    with rag_col2:
+        if use_rag and st.session_state.get('rag_processor'):
+            # RAG configuration options
+            max_products = st.slider(
+                "Max Products",
+                min_value=1,
+                max_value=10,
+                value=st.session_state.get('max_products', 5),
+                help="Maximum number of products to retrieve"
+            )
+            st.session_state.max_products = max_products
+            
+            max_reviews = st.slider(
+                "Max Reviews",
+                min_value=1,
+                max_value=8,
+                value=st.session_state.get('max_reviews', 3),
+                help="Maximum number of review summaries to retrieve"
+            )
+            st.session_state.max_reviews = max_reviews
 
-# Initialize query input state
-if "query_input" not in st.session_state:
-    st.session_state.query_input = ""
+with tab_query:
+    st.header("Chat Interface")
+    
+    # Enhanced example queries with categories
+    if st.session_state.get('rag_processor') and st.session_state.get('use_rag', False):
+        with st.expander("💡 Example Queries by Category", expanded=True):
+            
+            # Organize examples by category
+            example_categories = {
+                "🔍 Product Information": [
+                    "What are the key features of iPhone charging cables?",
+                    "Tell me about Fire TV Stick performance and capabilities"
+                ],
+                "⭐ Reviews & Feedback": [
+                    "What do people say about iPhone charger cables?",
+                    "What are customer experiences with Bluetooth earbuds?"
+                ],
+                "⚖️ Product Comparisons": [
+                    "Compare Fire TV and regular tablets",
+                    "Compare Ethernet cables vs USB cables for data transfer"
+                ],
+                "❗ Common Complaints": [
+                    "What are the main complaints about laptop backpacks?",
+                    "What problems do people have with wireless routers?"
+                ],
+                "💰 Budget Recommendations": [
+                    "Recommend a budget-friendly tablet under $100",
+                    "Suggest affordable alternatives to expensive noise-canceling headphones"
+                ],
+                "🎯 Use Case Evaluation": [
+                    "Is the Ethernet cable good for gaming?",
+                    "Can a smartwatch be used for fitness tracking effectively?"
+                ]
+            }
+            
+            for category, queries in example_categories.items():
+                st.write(f"**{category}**")
+                cols = st.columns(len(queries))
+                for i, query in enumerate(queries):
+                    with cols[i]:
+                        if st.button(query, key=f"example_{category}_{i}", help="Click to use this query"):
+                            st.session_state.prefilled_query = query
+                            st.rerun()
+                st.write("")  # Add some spacing
+    
+    # Query History
+    if "query_history" not in st.session_state:
+        st.session_state.query_history = []
+    
+    if st.session_state.query_history:
+        with st.expander("🕐 Recent Queries"):
+            selected_history = st.selectbox(
+                "Select a previous query:",
+                options=[""] + st.session_state.query_history[-10:],  # Last 10 queries
+                index=0,
+                key="history_selector"
+            )
+            if selected_history:
+                st.session_state.prefilled_query = selected_history
+                st.rerun()
+    
+    # Quick Filters (when RAG is enabled)
+    if st.session_state.get('rag_processor') and st.session_state.get('use_rag', False):
+        st.subheader("🎛️ Quick Filters")
+        filter_col1, filter_col2, filter_col3 = st.columns(3)
+        
+        with filter_col1:
+            query_type_filter = st.selectbox(
+                "Query Type",
+                ["Any", "Product Info", "Reviews", "Comparison", "Complaints", "Recommendations", "Use Case"],
+                key="query_type_filter"
+            )
+        
+        with filter_col2:
+            category_filter = st.selectbox(
+                "Category",
+                ["Any", "Cables", "Audio", "Tablets", "Networking", "Gaming", "Accessories"],
+                key="category_filter"
+            )
+        
+        with filter_col3:
+            price_filter = st.selectbox(
+                "Price Range",
+                ["Any", "Under $50", "$50-$100", "$100-$200", "Over $200"],
+                key="price_filter"
+            )
+        
+        # Apply filters button
+        if st.button("🔍 Apply Filters to Next Query", help="Filters will be applied to your next question"):
+            filter_context = []
+            if query_type_filter != "Any":
+                filter_context.append(f"Focus on {query_type_filter.lower()}")
+            if category_filter != "Any":
+                filter_context.append(f"in {category_filter.lower()} category")
+            if price_filter != "Any":
+                filter_context.append(f"with price range {price_filter.lower()}")
+            
+            if filter_context:
+                st.session_state.active_filters = " ".join(filter_context)
+                st.success(f"Filters applied: {st.session_state.active_filters}")
+    
+    st.divider()
+    
+    # Chat History Display
+    if "messages" not in st.session_state:
+        welcome_msg = "Hello! I'm your Amazon Electronics Assistant. "
+        if st.session_state.get('rag_processor'):
+            welcome_msg += "Ask me about electronics products, reviews, comparisons, and recommendations from our database of 1,000 products and 20,000 reviews!"
+        else:
+            welcome_msg += "How can I assist you today?"
+        
+        st.session_state.messages = [{"role": "assistant", "content": welcome_msg}]
 
-# Handle prefilled query from example buttons
-if "prefilled_query" in st.session_state:
-    st.session_state.query_input = st.session_state.prefilled_query
-    del st.session_state.prefilled_query  # Clear after using
+    # Display chat messages
+    for i, message in enumerate(st.session_state.messages):
+        with st.chat_message(message["role"]):
+            # Use enhanced display for assistant messages when RAG is enabled
+            if (message["role"] == "assistant" and 
+                i > 0 and  # Not the welcome message
+                st.session_state.get('use_rag', False)):
+                display_enhanced_response(message["content"], rag_context=False)
+            else:
+                st.markdown(message["content"])
 
-# Create a form for the query input
-with st.form(key="query_form", clear_on_submit=True):
+    # Initialize query input state
+    if "query_input" not in st.session_state:
+        st.session_state.query_input = ""
+
+    # Handle prefilled query from example buttons
+    if "prefilled_query" in st.session_state:
+        st.session_state.query_input = st.session_state.prefilled_query
+        del st.session_state.prefilled_query  # Clear after using
+
+    # Build dynamic placeholder text
+    placeholder_text = "Type your question here..."
+    if st.session_state.get('rag_processor') and st.session_state.get('use_rag', False):
+        placeholder_text = "Ask about electronics products, reviews, or comparisons..."
+    
+    # Add filter context to placeholder if active
+    if hasattr(st.session_state, 'active_filters'):
+        placeholder_text = f"{placeholder_text} (Filters: {st.session_state.active_filters})"
+    
+    # Query input (outside form to allow suggestions)
     query_input = st.text_input(
-        "Ask about electronics products, reviews, or comparisons...",
+        "Your Question:",
         value=st.session_state.query_input,
-        placeholder="Type your question here or click an example above",
-        key="query_text_input"
+        placeholder=placeholder_text,
+        key="query_text_input",
+        help="Ask about products, reviews, comparisons, or use the examples above"
     )
-    submit_button = st.form_submit_button("Send")
+    
+    # Show query suggestions if user is typing (outside form)
+    if query_input and len(query_input) >= 3 and st.session_state.get('rag_processor'):
+        suggestions = get_query_suggestions(query_input, st.session_state.rag_processor)
+        if suggestions:
+            st.write("💡 **Suggestions:**")
+            suggestion_cols = st.columns(min(len(suggestions), 3))
+            for i, suggestion in enumerate(suggestions):
+                with suggestion_cols[i % 3]:
+                    if st.button(suggestion, key=f"suggestion_{i}", help="Click to use this suggestion"):
+                        st.session_state.query_input = suggestion
+                        st.rerun()
+    
+    # Form for submit and clear buttons only
+    with st.form(key="query_form", clear_on_submit=False):
+        submit_col, clear_col = st.columns([3, 1])
+        with submit_col:
+            submit_button = st.form_submit_button("🚀 Send", use_container_width=True)
+        with clear_col:
+            clear_button = st.form_submit_button("🗑️ Clear", use_container_width=True)
+        
+    if clear_button:
+        st.session_state.messages = [st.session_state.messages[0]]  # Keep welcome message
+        st.session_state.query_input = ""  # Clear query input
+        if hasattr(st.session_state, 'active_filters'):
+            del st.session_state.active_filters
+        st.rerun()
     
     if submit_button and query_input.strip():
+        # Add active filters to query if they exist
+        final_query = query_input
+        if hasattr(st.session_state, 'active_filters'):
+            final_query = f"{query_input} ({st.session_state.active_filters})"
+            del st.session_state.active_filters  # Clear after use
+        
+        # Add to query history
+        if query_input not in st.session_state.query_history:
+            st.session_state.query_history.append(query_input)
+        
         # Clear the session state input
         st.session_state.query_input = ""
         
         # Add user message
-        st.session_state.messages.append({"role": "user", "content": query_input})
+        st.session_state.messages.append({"role": "user", "content": final_query})
         with st.chat_message("user"):
-            st.markdown(query_input)
+            st.markdown(final_query)
 
         # Generate assistant response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..." if not st.session_state.get('use_rag', False) else "Searching products and reviews..."):
+                client = get_llm_client()
                 output = run_llm(client, st.session_state.messages)
-                st.write(output)
+                
+                # Use enhanced display if RAG was used
+                if st.session_state.get('use_rag', False):
+                    display_enhanced_response(output, rag_context=True)
+                else:
+                    st.write(output)
+        
         st.session_state.messages.append({"role": "assistant", "content": output})
         st.rerun()
+
+with tab_monitoring:
+    st.header("Performance Monitoring")
+    
+    # Performance Metrics Section
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📊 Session Statistics")
+        
+        # Calculate session stats
+        total_messages = len(st.session_state.get('messages', [])) - 1  # Exclude welcome message
+        user_messages = len([m for m in st.session_state.get('messages', []) if m['role'] == 'user'])
+        
+        st.metric("Total Messages", total_messages)
+        st.metric("User Queries", user_messages)
+        st.metric("Query History", len(st.session_state.get('query_history', [])))
+        
+        # System Configuration Status
+        st.subheader("⚙️ Current Configuration")
+        current_provider = st.session_state.get('provider', 'Not Set')
+        current_model = st.session_state.get('model_name', 'Not Set')
+        rag_enabled = st.session_state.get('use_rag', False)
+        
+        st.write(f"**Provider:** {current_provider}")
+        st.write(f"**Model:** {current_model}")
+        st.write(f"**RAG Status:** {'🟢 Enabled' if rag_enabled else '🔴 Disabled'}")
+        st.write(f"**Temperature:** {st.session_state.get('temperature', 0.7)}")
+        st.write(f"**Max Tokens:** {st.session_state.get('max_tokens', 500)}")
+    
+    with col2:
+        st.subheader("🔍 Recent Activity")
+        
+        # Show recent queries if any
+        recent_queries = st.session_state.get('query_history', [])[-5:]  # Last 5 queries
+        if recent_queries:
+            for i, query in enumerate(reversed(recent_queries), 1):
+                st.write(f"{i}. {query[:50]}{'...' if len(query) > 50 else ''}")
+        else:
+            st.write("No queries yet")
+        
+        # RAG Performance (if available)
+        if st.session_state.get('rag_processor') and st.session_state.get('use_rag', False):
+            st.subheader("🛍️ RAG Performance")
+            st.write(f"**Max Products:** {st.session_state.get('max_products', 5)}")
+            st.write(f"**Max Reviews:** {st.session_state.get('max_reviews', 3)}")
+            st.write("**Database:** 1,000 products, 20,000 reviews")
+            
+            # Display last RAG result if available
+            if hasattr(st.session_state, 'last_rag_result'):
+                rag_res = st.session_state.last_rag_result
+                context = rag_res["context"]
+                st.success(f"Last Query: Found {context['num_products']} products, {context['num_reviews']} reviews")
+                st.caption(f"Query type: {context['query_type']}")
+                st.caption(f"Processing time: {rag_res['processing_time_ms']}ms")
+            
+            # Display RAG error if any
+            if hasattr(st.session_state, 'last_rag_error'):
+                st.error(f"Last RAG Error: {st.session_state.last_rag_error}")
+    
+    # Real-time Performance Metrics
+    if hasattr(st.session_state, 'last_performance'):
+        st.divider()
+        st.subheader("⚡ Latest Query Performance")
+        
+        perf = st.session_state.last_performance
+        perf_col1, perf_col2, perf_col3 = st.columns(3)
+        
+        with perf_col1:
+            st.metric("Total Time", f"{perf['total_time_ms']}ms")
+        with perf_col2:
+            st.metric("RAG Time", f"{perf['rag_time_ms']}ms")
+        with perf_col3:
+            st.metric("LLM Time", f"{perf['llm_time_ms']}ms")
+        
+        # Performance breakdown chart
+        if perf['rag_time_ms'] > 0:
+            rag_percentage = (perf['rag_time_ms'] / perf['total_time_ms']) * 100
+            llm_percentage = (perf['llm_time_ms'] / perf['total_time_ms']) * 100
+            st.caption(f"Breakdown: RAG {rag_percentage:.1f}% | LLM {llm_percentage:.1f}%")
+    
+    st.divider()
+    
+    # Weave Tracing Integration
+    if weave_result["status"] == "success":
+        st.subheader("📈 Weave Tracing Dashboard")
+        st.success("Weave tracing is active! Visit your [W&B Dashboard](https://wandb.ai) to view detailed traces.")
+        st.info("Navigate to the 'Bootcamp' project to see:")
+        st.write("- RAG query processing metrics")
+        st.write("- LLM provider performance")
+        st.write("- Response timing analysis")
+        st.write("- Error tracking and debugging")
+    else:
+        st.subheader("📈 Weave Tracing")
+        st.warning("Weave tracing is not active. Add WANDB_API_KEY to enable detailed monitoring.")
+    
+    # System Health Check
+    st.subheader("🏥 System Health")
+    health_checks = []
+    
+    # Check API configurations
+    if config.OPENAI_API_KEY:
+        health_checks.append("✅ OpenAI API configured")
+    else:
+        health_checks.append("❌ OpenAI API not configured")
+    
+    if config.GROQ_API_KEY:
+        health_checks.append("✅ Groq API configured")
+    else:
+        health_checks.append("❌ Groq API not configured")
+    
+    if config.GOOGLE_API_KEY:
+        health_checks.append("✅ Google API configured")
+    else:
+        health_checks.append("❌ Google API not configured")
+    
+    # Check RAG system
+    if rag_init_result["status"] == "success" and rag_init_result["has_vector_db"]:
+        health_checks.append("✅ RAG system operational")
+    else:
+        health_checks.append("❌ RAG system unavailable")
+    
+    for check in health_checks:
+        st.write(check)
+

@@ -397,6 +397,46 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 - **✅ Synthetic Test Data**: Advanced synthetic data generation with template-based queries, variation techniques, and quality analysis
 - **✅ Production Ready**: Complete testing suite, evaluation framework, synthetic data generation, documentation, deployment configuration, and optimized monitoring
 
+## Sprint Documentation
+
+### [docs/SPRINT_0.md](docs/SPRINT_0.md) - Foundation Phase
+**Sprint Duration**: Project Start - June 28, 2025  
+**Version**: 0.1.0  
+**Scope**: Foundational components and infrastructure setup
+
+**Core Deliverables**:
+- Project setup and environment configuration
+- Data processing pipeline (25GB+ Amazon dataset)
+- Multi-provider LLM configuration (OpenAI, Groq, Google)
+- Basic Weave tracing integration
+- Architecture planning for RAG implementation
+
+**Key Achievements**:
+- 1,000 electronics products, 20,000 reviews processed
+- Modern development infrastructure with uv package manager
+- Comprehensive documentation and troubleshooting guides
+- Foundation established for advanced RAG capabilities
+
+### [docs/SPRINT_1.md](docs/SPRINT_1.md) - RAG Prototype Implementation
+**Sprint Duration**: June 29, 2025 - July 1, 2025  
+**Version**: 0.7.0  
+**Scope**: Complete RAG system following course requirements
+
+**Course Requirements Completed** (Tasks 1-4):
+- ✅ **Task 1**: Vector database setup on local machine (Lesson 3)
+- ✅ **Task 2**: Basic RAG pipeline implementation (Lesson 4)
+- ✅ **Task 3**: Instrumentation and observability (Lesson 5)
+- ✅ **Task 4**: First batch of evaluations with W&B integration (Lesson 6)
+
+**Beyond Scope Achievements**:
+- Advanced query intelligence with 6 specialized types
+- Dual-architecture deployment (local/Docker optimization)
+- Comprehensive evaluation framework with synthetic data generation
+- Production-grade monitoring with zero-redundancy tracing
+- Enterprise deployment capabilities with container optimization
+
+**W&B Integration**: All evaluation metrics and traces logged to wandb.ai dashboard for analysis
+
 ## Repository
 
 [GitHub repo](https://github.com/HendrikReh/AI-Powered-Amazon-Product-Assistant)

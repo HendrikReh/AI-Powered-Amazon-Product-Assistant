@@ -1,6 +1,6 @@
 # AI-Powered Amazon Product Assistant (B2C only)
 
-An end-to-end AI engineering project that builds an intelligent product recommendation and analysis system using Amazon Electronics dataset. This capstone project demonstrates modern AI engineering practices including data processing, visualization, and retrieval-augmented generation (RAG).
+An end-to-end AI engineering project that builds an intelligent product recommendation and analysis system using Amazon Electronics dataset with a complete RAG implementation. This capstone project demonstrates modern AI engineering practices including data processing, visualization, vector databases, and retrieval-augmented generation (RAG).
 
 **Course**: End-to-End AI Engineering Bootcamp ([Maven](https://maven.com/swirl-ai/end-to-end-ai-engineering))
 
@@ -8,10 +8,15 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 
 - **Data Processing Pipeline**: Automated processing of large-scale Amazon product and review data
 - **Interactive Visualizations**: Comprehensive analysis dashboards with temporal trends, category insights, and rating patterns  
-- **RAG-Ready Dataset**: Processed data optimized for retrieval-augmented generation systems
-- **Streamlit UI**: User-friendly interface with configurable LLM parameters (temperature, max tokens, top-p, top-k)
+- **Complete RAG System**: Vector database with ChromaDB, intelligent query processing, and context-aware retrieval
+- **Streamlit UI**: Enhanced chat interface with RAG toggle, configurable LLM parameters, and example queries
 - **Multi-Provider Support**: Compatible with OpenAI, Groq, and Google Gemini models
-- **Weave Tracing**: Optional LLM call tracking and performance monitoring via Weights & Biases
+- **Vector Database**: ChromaDB-powered semantic search with GTE-large embeddings, metadata filtering and hybrid queries
+- **Query Intelligence**: Automatic query type detection for product reviews, comparisons, complaints, and recommendations
+- **RAG Evaluation Framework**: Comprehensive evaluation system with Weave integration, 5 core metrics, and 14 test examples
+- **Synthetic Test Data**: Advanced synthetic data generation with template-based queries, variation techniques, and quality analysis
+- **Production Testing**: Automated test case generation with configurable difficulty distributions and Weave traceability
+- **Optimized Weave Tracing**: Production-ready AI pipeline monitoring with efficient session-based initialization, zero-redundancy design, and comprehensive analytics
 
 ## Out-of-Scope (B2B Scope)
 
@@ -37,6 +42,7 @@ An end-to-end AI engineering project that builds an intelligent product recommen
 - Most active day: Tuesday (3,068 reviews)
 - Most active month: January (2,283 reviews)
 - Recent activity: 37.8% of reviews from 2020 onwards
+- **Embedding Model**: GTE-large (1024 dimensions) for superior semantic search
 
 ## Setup & Installation
 
@@ -87,23 +93,53 @@ An end-to-end AI engineering project that builds an intelligent product recommen
    # Visualization dashboard
    uv run jupyter notebook notebooks/data_visualization.ipynb
    
-   # Streamlit chatbot interface
+   # Streamlit chatbot interface with RAG
    uv run streamlit run src/chatbot-ui/streamlit_app.py
+   
+   # Test RAG system functionality
+   uv run python test_rag_system.py
+   
+   # Run RAG evaluation framework
+   uv run python run_evaluation.py --create-dataset
+   uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+   
+   # Generate and evaluate synthetic test data
+   uv run python run_synthetic_evaluation.py --synthetic-only --num-synthetic 50
+   
+   # Create mixed dataset (original + synthetic)
+   uv run python run_synthetic_evaluation.py --mixed-dataset --save-datasets
+   
+   # Run synthetic data examples
+   uv run python examples/synthetic_data_examples.py
    ```
 
-### Docker Deployment
+### Docker Deployment (with ChromaDB)
 
 ```bash
-# Build the container
+# Build the containers
 make build-docker-streamlit
 
-# Run the application
+# Run both Streamlit app and ChromaDB service
 make run-docker-streamlit
+
+# View logs
+make logs-docker-streamlit
+
+# Stop services
+make stop-docker-streamlit
+
+# Restart services
+make restart-docker-streamlit
 ```
 
-### Weave Tracing Setup
+**Docker Services:**
+- **Streamlit App**: http://localhost:8501 
+- **ChromaDB Service**: http://localhost:8000
+- **Persistent Storage**: Vector data persisted in Docker volume
 
-The application includes optional Weave tracing for LLM call monitoring and performance analysis.
+### Enhanced Weave Tracing Setup
+
+The application includes comprehensive Weave tracing for end-to-end AI pipeline monitoring and performance analysis.
 
 1. **Get W&B API Key**
    - Sign up at [wandb.ai](https://wandb.ai)
@@ -115,16 +151,31 @@ The application includes optional Weave tracing for LLM call monitoring and perf
    echo "WANDB_API_KEY=your_wandb_api_key" >> .env
    ```
 
-3. **Features Tracked**
-   - LLM call performance and latency
-   - Model configuration (temperature, tokens, top-p, top-k)
-   - Conversation flows and context
-   - Provider comparison (OpenAI vs Groq vs Google)
+3. **Enhanced Features Tracked**
+   - **Optimized Initialization**: Single-session setup with session state management
+   - **RAG Pipeline Tracing**: Query analysis, context building, and retrieval metrics
+   - **LLM Provider Tracking**: Detailed request/response metadata for OpenAI, Groq, and Google
+   - **Performance Analytics**: Sub-operation timing, character counts, and success rates
+   - **Error Classification**: Structured error handling with types and fallback strategies
+   - **Real-Time UI Feedback**: Processing times and operation status in sidebar
+   - **Context Quality Metrics**: Query type detection, extracted terms, and retrieval effectiveness
+   - **Trace Optimization**: Eliminated redundant calls and duplicate initialization
 
-4. **View Traces**
-   - Visit your [W&B dashboard](https://wandb.ai)
-   - Navigate to the "Bootcamp" project
-   - Explore detailed traces and performance metrics
+4. **Optimized Operation Monitoring**
+   - **Session-Based Initialization**: Single setup per session via `@st.cache_resource`
+   - **Consolidated Tracing**: Primary trace points at key pipeline stages
+   - **RAG Enhancement Metrics**: Query processing timing and context quality
+   - **LLM Provider Analytics**: Request/response data with performance breakdown
+   - **End-to-End Pipeline**: Complete timing analysis from query to response
+   - **Zero-Redundancy Design**: Eliminated multiple trace calls for same operations
+
+5. **Production-Ready Monitoring**
+   - **Optimized Trace Volume**: Meaningful traces without duplication
+   - **Session State Management**: Prevents repeated initialization calls
+   - **Clean Dashboard Data**: Visit your [W&B dashboard](https://wandb.ai) for organized traces
+   - **Performance Insights**: Navigate to "Bootcamp" project for analytics
+   - **Error Tracking**: Structured error handling with fallback strategies
+   - **Real-Time Feedback**: Processing times displayed in Streamlit sidebar
 
 ## Project Structure
 
@@ -133,12 +184,13 @@ AI-Powered-Amazon-Product-Assistant/
 ├── 📁 data/
 │   ├── Electronics.jsonl                              # Raw review data (25GB)
 │   ├── meta_Electronics.jsonl                         # Raw product metadata (4.9GB)
-│   └── 📁 processed/
-│       ├── electronics_top1000_products.jsonl         # 1,000 product records
-│       ├── electronics_top1000_products_reviews.jsonl # 20,000 review records
-│       ├── electronics_rag_documents.jsonl            # 2,000 RAG-optimized documents
-│       ├── dataset_summary.json                       # Processing metadata
-│       └── README.md                                  # Data documentation
+│   ├── 📁 processed/
+│   │   ├── electronics_top1000_products.jsonl         # 1,000 product records
+│   │   ├── electronics_top1000_products_reviews.jsonl # 20,000 review records
+│   │   ├── electronics_rag_documents.jsonl            # 2,000 RAG-optimized documents
+│   │   ├── dataset_summary.json                       # Processing metadata
+│   │   └── README.md                                  # Data documentation
+│   └── 📁 chroma_db/                                  # Vector database storage (local)
 ├── 📁 notebooks/
 │   ├── data_preprocessing.ipynb                       # Data processing pipeline
 │   ├── data_visualization.ipynb                       # Interactive EDA template
@@ -146,17 +198,39 @@ AI-Powered-Amazon-Product-Assistant/
 │   ├── verify_api_keys.ipynb                         # API configuration testing
 │   └── README.md                                      # Notebook documentation
 ├── 📁 src/
-│   └── 📁 chatbot-ui/
-│       ├── 📁 core/
-│       │   └── config.py                              # Multi-provider configuration
-│       └── streamlit_app.py                          # Main chatbot interface
+│   ├── 📁 chatbot-ui/
+│   │   ├── 📁 core/
+│   │   │   └── config.py                              # Multi-provider configuration
+│   │   └── streamlit_app.py                          # Main chatbot interface with RAG
+│   ├── 📁 rag/
+│   │   ├── vector_db.py                               # ChromaDB vector database (local, GTE-large)
+│   │   ├── vector_db_docker.py                       # ChromaDB vector database (Docker, optimized)
+│   │   └── query_processor.py                        # RAG query processing (auto-selects implementation)
+│   └── 📁 evaluation/
+│       ├── __init__.py                                # Evaluation module interface
+│       ├── evaluator.py                               # Main RAG evaluator using Weave
+│       ├── dataset.py                                 # Evaluation dataset creation and management
+│       ├── scorers.py                                 # Scoring functions for 5 core metrics
+│       └── synthetic_data_generator.py               # Advanced synthetic test data generation
+├── 📁 examples/
+│   └── synthetic_data_examples.py                    # Synthetic data usage demonstrations
+├── 📁 docs/                                          # Technical documentation
+│   ├── CHROMA.md                                      # ChromaDB integration guide
+│   ├── LOCAL_VS_DOCKER.md                            # Local vs Docker implementation comparison
+│   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide
+│   ├── EVALUATIONS.md                                # RAG evaluation framework documentation
+│   ├── SYNTHETIC_DATA.md                             # Synthetic test data generation guide
+│   └── DOCKER_TTY_FIXES.md                           # Container deployment fixes
 ├── 📄 pyproject.toml                                  # uv dependencies & config
+├── 📄 docker-compose.yml                              # Multi-service container setup
 ├── 📄 Dockerfile                                      # Container deployment
+├── 📄 docker-entrypoint.sh                           # Container initialization script
+├── 📄 test_rag_system.py                               # RAG system testing script
+├── 📄 run_evaluation.py                               # RAG evaluation framework runner
+├── 📄 run_synthetic_evaluation.py                     # Synthetic data evaluation runner
 ├── 📄 Makefile                                        # Build automation
 ├── 📄 PROJECT_CANVAS.md                               # Project roadmap & tasks
-├── 📄 WEAVE_TRACING_GUIDE.md                          # LLM tracing & monitoring guide
-├── 📄 DOCKER_TTY_FIXES.md                             # Container deployment fixes
-├── 📄 CLAUDE.md                                       # AI assistant change log
+├── 📄 CLAUDE.md                                       # AI assistant development log
 └── 📄 README.md                                       # Project documentation
 ```
 
@@ -169,6 +243,8 @@ The project includes a comprehensive data processing pipeline:
 3. **Review Sampling**: Extracts representative reviews for each product
 4. **Data Cleaning**: Handles missing values, validates data integrity
 5. **RAG Optimization**: Formats data for retrieval-augmented generation systems
+6. **Vector Database Creation**: Automatic ingestion into ChromaDB with embeddings and metadata
+7. **Query Processing**: Intelligent context retrieval based on query type and intent
 
 ## Visualization Capabilities
 
@@ -185,11 +261,14 @@ The visualization notebook provides comprehensive insights:
 
 - **Data Processing**: pandas, numpy, json
 - **Visualization**: matplotlib, seaborn, plotly
+- **Vector Database**: Dual-architecture ChromaDB system (local: GTE-large, Docker: optimized)
+- **Embedding Models**: GTE-large (development) and ChromaDB default (production) with automatic selection
+- **RAG Implementation**: Custom query processing with intelligent context retrieval and environment detection
 - **Notebook Environment**: Jupyter, IPython
 - **Package Management**: uv (modern Python package manager)
-- **Web Interface**: Streamlit with configurable LLM parameters
+- **Web Interface**: Streamlit with RAG integration and configurable LLM parameters
 - **LLM Providers**: OpenAI GPT-4o, Groq Llama, Google Gemini 2.0
-- **Monitoring**: Weave tracing via Weights & Biases
+- **Monitoring**: Optimized Weave tracing via Weights & Biases with session state management
 - **Configuration**: Pydantic settings with environment variables
 - **Containerization**: Docker with non-root security
 
@@ -209,6 +288,62 @@ with open('data/processed/electronics_top1000_products.jsonl', 'r') as f:
 
 df_products = pd.DataFrame(products)
 print(f"Loaded {len(df_products)} products")
+```
+
+### RAG System
+```python
+# Test RAG system
+from src.rag.query_processor import create_rag_processor
+
+# Initialize processor
+processor = create_rag_processor()
+
+# Process a query
+result = processor.process_query("What do people say about iPhone charger cables?")
+print(f"Found {result['metadata']['num_products']} products and {result['metadata']['num_reviews']} reviews")
+```
+
+### RAG Evaluation Framework
+```python
+# Run comprehensive evaluation
+from src.evaluation.evaluator import RAGEvaluator
+from src.evaluation.dataset import create_evaluation_dataset
+
+# Create evaluator with your RAG processor and LLM client
+evaluator = RAGEvaluator(rag_processor, llm_client)
+
+# Run single query evaluation
+metrics = evaluator.run_single_evaluation(
+    query="What are iPhone charger features?",
+    expected_answer="Expected response...",
+    expected_products=["lightning_cable"],
+    expected_topics=["features", "compatibility"],
+    query_type="product_info"
+)
+
+print(f"Overall Score: {metrics.overall:.3f}")
+```
+
+### Synthetic Test Data Generation
+```python
+# Generate synthetic evaluation data
+from src.evaluation.synthetic_data_generator import create_synthetic_dataset, SyntheticDataConfig
+
+# Custom configuration
+config = SyntheticDataConfig(
+    num_examples_per_category=5,
+    difficulty_distribution={"easy": 0.3, "medium": 0.5, "hard": 0.2},
+    variation_techniques=["rephrase", "specificity", "context"]
+)
+
+# Generate synthetic examples
+synthetic_examples = create_synthetic_dataset(config, num_examples=30)
+print(f"Generated {len(synthetic_examples)} synthetic test cases")
+
+# Create mixed dataset (original + synthetic)
+from src.evaluation.synthetic_data_generator import create_mixed_dataset
+original_examples = create_evaluation_dataset()
+mixed_dataset = create_mixed_dataset(original_examples, synthetic_ratio=0.5)
 ```
 
 ### Visualization
@@ -233,6 +368,16 @@ temporal_analysis(df_reviews)
 
 4. **Large File Handling**: The raw data files are large (25GB+). Ensure sufficient disk space and memory.
 
+5. **Multiple Weave Traces (Fixed)**: Previous versions created redundant trace calls due to improper interaction between `@st.cache_resource` and `@weave.op()` decorators. This has been resolved with session state management and optimized tracing architecture.
+
+## Recent Improvements
+
+### Weave Tracing Optimization (v0.5.0)
+- **Issue Resolved**: Eliminated multiple/redundant Weave trace calls
+- **Root Cause**: Improper interaction between Streamlit caching and Weave decorators
+- **Solution**: Session state initialization + consolidated trace entry points
+- **Result**: Clean, meaningful traces with zero redundancy
+
 ## Documentation
 
 This project includes comprehensive documentation to help you understand and work with the system:
@@ -245,7 +390,25 @@ This project includes comprehensive documentation to help you understand and wor
 - Configuration features and tracing implementation status
 - Success criteria and architecture decisions
 
-### [WEAVE_TRACING_GUIDE.md](WEAVE_TRACING_GUIDE.md)
+### [docs/CHROMA.md](docs/CHROMA.md)
+**Complete ChromaDB integration guide**
+- GTE-large embedding model implementation details
+- Data loading process and timeline details
+- Search capabilities and metadata schema
+- Performance monitoring and logging
+- Troubleshooting guide and best practices
+- API reference and usage examples
+
+### [docs/LOCAL_VS_DOCKER.md](docs/LOCAL_VS_DOCKER.md)
+**Local development vs Docker production comparison**
+- Dual-architecture approach explanation (vector_db.py vs vector_db_docker.py)
+- Embedding strategy differences (GTE-large vs ChromaDB default)
+- Connection architecture and storage configuration details
+- Performance comparison and resource usage analysis
+- Use case guidelines and migration considerations
+- Troubleshooting and best practices for both environments
+
+### [docs/WEAVE_TRACING_GUIDE.md](docs/WEAVE_TRACING_GUIDE.md)
 **Comprehensive LLM tracing and monitoring guide**
 - Complete Weave integration implementation details
 - Configuration parameter tracking (temperature, max_tokens, top_p, top_k)
@@ -254,7 +417,25 @@ This project includes comprehensive documentation to help you understand and wor
 - Performance monitoring and debugging techniques
 - Troubleshooting guide for common tracing issues
 
-### [DOCKER_TTY_FIXES.md](DOCKER_TTY_FIXES.md)
+### [docs/EVALUATIONS.md](docs/EVALUATIONS.md)
+**RAG evaluation framework documentation**
+- Comprehensive evaluation system using Weave for experiment tracking
+- 5 core metrics: Relevance, Accuracy, Completeness, Factuality, Quality
+- 14 evaluation examples across 6 query types and 3 difficulty levels
+- Command-line interface and integration examples
+- Performance benchmarks and customization guide
+- Continuous integration setup and troubleshooting
+
+### [docs/SYNTHETIC_DATA.md](docs/SYNTHETIC_DATA.md)
+**Synthetic test data generation guide**
+- Advanced synthetic data generation with template-based queries and variation techniques
+- Configurable generation parameters: difficulty distribution, query types, and variation methods
+- Quality validation tools: uniqueness analysis, length distribution, and topic coverage
+- Weave integration for full traceability and performance monitoring
+- Mixed dataset creation combining original and synthetic data for robust testing
+- Best practices implementation and troubleshooting guide
+
+### [docs/DOCKER_TTY_FIXES.md](docs/DOCKER_TTY_FIXES.md)
 **Containerized deployment compatibility guide**
 - Docker TTY issues and solutions for production deployment
 - Non-root user configuration and security best practices

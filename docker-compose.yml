@@ -1,0 +1,42 @@
+services:
+  streamlit-app:
+    build: .
+    container_name: ai-product-assistant-app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./.env:/app/.env:ro
+      - ./data:/app/data
+      - ./src/rag:/app/src/rag
+    environment:
+      - PYTHONPATH=/app/src:/app
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+    networks:
+      - ai-assistant-network
+
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: ai-product-assistant-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    restart: unless-stopped
+    networks:
+      - ai-assistant-network
+
+volumes:
+  chroma-data:
+    driver: local
+
+networks:
+  ai-assistant-network:
+    driver: bridge

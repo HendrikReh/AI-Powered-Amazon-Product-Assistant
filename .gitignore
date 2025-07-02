@@ -7,3 +7,6 @@
 .DS_Store
 /data/Electronics.jsonl
 /data/meta_Electronics.jsonl
+/data/chroma_db
+__pycache__
+/evaluation.log

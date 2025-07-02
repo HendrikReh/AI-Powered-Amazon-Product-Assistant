@@ -418,8 +418,8 @@ Selected product category (e.g., electronics, kitchenware) with a few thousand e
 - Foundation established for advanced RAG capabilities
 
 ### [docs/SPRINT_1.md](docs/SPRINT_1.md) - RAG Prototype Implementation
-**Sprint Duration**: June 29, 2025 - July 1, 2025  
-**Version**: 0.7.0  
+**Sprint Duration**: June 29, 2025 - July 6, 2025  
+**Version**: 0.8.0  
 **Scope**: Complete RAG system following course requirements
 
 **Course Requirements Completed** (Tasks 1-4):

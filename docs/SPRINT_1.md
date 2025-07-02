@@ -1,6 +1,6 @@
 # Sprint 1 Summary - AI-Powered Amazon Product Assistant
 
-**Sprint Duration**: June 29, 2025 - July 1, 2025  
+**Sprint Duration**: June 29, 2025 - July 2, 2025  
 **Version Completed**: 0.7.0  
 **Course**: End-to-End AI Engineering Bootcamp ([Maven](https://maven.com/swirl-ai/end-to-end-ai-engineering))
 

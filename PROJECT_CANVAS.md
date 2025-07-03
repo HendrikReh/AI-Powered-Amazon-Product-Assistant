@@ -2,8 +2,8 @@
 
 * **Prepared by:** [Hendrik Reh](hendrik.reh@gmail.com)
 * **Prepared for:** Aurimas Griciūnas (Instructor) | [End-to-End AI Engineering Bootcamp](https://maven.com/swirl-ai/end-to-end-ai-engineering)
-* **Date:** 2025/07/02
-* **Version:** 0.8.0
+* **Date:** 2025/07/03
+* **Version:** 0.9.0
 
 ## Project Name
 

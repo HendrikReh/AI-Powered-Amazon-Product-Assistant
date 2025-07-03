@@ -283,9 +283,20 @@ def call_llm_provider(provider: str, model_name: str, messages: list, temperatur
     
     try:
         if provider == "Google":
+            # Format messages for Google GenAI - filter out empty content and convert roles
+            google_messages = []
+            for message in messages:
+                if message.get("content") and message["content"].strip():  # Only include non-empty messages
+                    # Convert OpenAI role format to Google format
+                    google_role = "user" if message["role"] == "user" else "model"
+                    google_messages.append({
+                        "role": google_role,
+                        "parts": [{"text": message["content"]}]
+                    })
+            
             response = client.models.generate_content(
                 model=model_name,
-                contents=[message["content"] for message in messages],
+                contents=google_messages,
                 config={
                     "temperature": temperature,
                     "max_output_tokens": max_tokens,
@@ -449,6 +460,8 @@ def run_llm(client, messages):
             "total_time_ms": final_trace['total_time_ms'],
             "rag_time_ms": rag_result['processing_time_ms'] if rag_result and rag_result["status"] == "success" else 0,
             "llm_time_ms": llm_result['response_time_ms'],
+            "llm_provider": provider,
+            "llm_model": model_name,
             "business_metrics": business_intelligence.get("business_metrics", {}) if business_intelligence else {}
         }
     
@@ -949,8 +962,13 @@ with tab_monitoring:
                 if user_journey:
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.metric("User Type", user_journey.get('user_type', 'Unknown').title())
-                        st.metric("Journey Stage", user_journey.get('journey_stage', 'Unknown').title())
+                        user_type = user_journey.get('user_type', 'Unknown')
+                        user_type_str = user_type.value if hasattr(user_type, 'value') else str(user_type)
+                        st.metric("User Type", user_type_str.title())
+                        
+                        journey_stage = user_journey.get('journey_stage', 'Unknown')
+                        journey_stage_str = journey_stage.value if hasattr(journey_stage, 'value') else str(journey_stage)
+                        st.metric("Journey Stage", journey_stage_str.title())
                     with col2:
                         st.metric("Queries in Session", user_journey.get('queries_count', 0))
                         avg_satisfaction = sum(user_journey.get('satisfaction_scores', [0])) / max(len(user_journey.get('satisfaction_scores', [1])), 1)
@@ -981,6 +999,22 @@ with tab_monitoring:
         st.subheader("⚡ Latest Query Performance")
         
         perf = st.session_state.last_performance
+        
+        # Display LLM provider information
+        llm_provider = perf.get('llm_provider', st.session_state.get('provider', 'Unknown'))
+        llm_model = perf.get('llm_model', st.session_state.get('model_name', 'Unknown'))
+        
+        # Provider-specific emoji mapping
+        provider_emoji = {
+            'OpenAI': '🔥',
+            'Groq': '⚡',
+            'Google': '🧠',
+            'Ollama': '🏠'
+        }
+        
+        provider_icon = provider_emoji.get(llm_provider, '🤖')
+        st.info(f"{provider_icon} **{llm_provider}** | Model: {llm_model}")
+        
         perf_col1, perf_col2, perf_col3 = st.columns(3)
         
         with perf_col1:
@@ -988,13 +1022,32 @@ with tab_monitoring:
         with perf_col2:
             st.metric("RAG Time", f"{perf['rag_time_ms']}ms")
         with perf_col3:
-            st.metric("LLM Time", f"{perf['llm_time_ms']}ms")
+            st.metric(f"{provider_icon} LLM Time", f"{perf['llm_time_ms']}ms")
         
         # Performance breakdown chart
         if perf['rag_time_ms'] > 0:
             rag_percentage = (perf['rag_time_ms'] / perf['total_time_ms']) * 100
             llm_percentage = (perf['llm_time_ms'] / perf['total_time_ms']) * 100
-            st.caption(f"Breakdown: RAG {rag_percentage:.1f}% | LLM {llm_percentage:.1f}%")
+            st.caption(f"Breakdown: RAG {rag_percentage:.1f}% | {provider_icon} {llm_provider} {llm_percentage:.1f}%")
+        else:
+            st.caption(f"100% {provider_icon} {llm_provider} processing")
+        
+        # Provider-specific performance insights
+        if llm_provider == "Groq":
+            if perf['llm_time_ms'] > 1000:
+                st.warning("⚡ Groq response slower than expected (usually <500ms)")
+            else:
+                st.success("⚡ Groq delivering high-speed responses")
+        elif llm_provider == "OpenAI":
+            if perf['llm_time_ms'] > 5000:
+                st.warning("🔥 OpenAI response time above average")
+            else:
+                st.info("🔥 OpenAI performing within normal range")
+        elif llm_provider == "Ollama":
+            if perf['llm_time_ms'] > 10000:
+                st.warning("🏠 Local Ollama processing may benefit from optimization")
+            else:
+                st.success("🏠 Local Ollama performing well")
         
         # Business performance metrics
         business_metrics = perf.get('business_metrics', {})

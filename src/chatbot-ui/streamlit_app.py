@@ -456,14 +456,68 @@ def run_llm(client, messages):
     
     # Store enhanced performance metrics for monitoring tab
     if llm_result["status"] == "success":
-        st.session_state.last_performance = {
+        current_performance = {
+            "timestamp": time.time(),
             "total_time_ms": final_trace['total_time_ms'],
             "rag_time_ms": rag_result['processing_time_ms'] if rag_result and rag_result["status"] == "success" else 0,
             "llm_time_ms": llm_result['response_time_ms'],
             "llm_provider": provider,
             "llm_model": model_name,
+            "use_rag": use_rag,
+            "message_length": len(llm_messages[-1]["content"]) if llm_messages else 0,
             "business_metrics": business_intelligence.get("business_metrics", {}) if business_intelligence else {}
         }
+        
+        # Store latest performance
+        st.session_state.last_performance = current_performance
+        
+        # Initialize historical performance tracking if not exists
+        if 'performance_history' not in st.session_state:
+            st.session_state.performance_history = []
+        
+        # Add to historical tracking
+        st.session_state.performance_history.append(current_performance)
+        
+        # Initialize provider/model statistics if not exists
+        if 'provider_model_stats' not in st.session_state:
+            st.session_state.provider_model_stats = {}
+        
+        # Track provider/model specific statistics
+        provider_model_key = f"{provider}::{model_name}"
+        if provider_model_key not in st.session_state.provider_model_stats:
+            st.session_state.provider_model_stats[provider_model_key] = {
+                "provider": provider,
+                "model": model_name,
+                "total_queries": 0,
+                "total_time_ms": 0,
+                "total_rag_time_ms": 0,
+                "total_llm_time_ms": 0,
+                "rag_queries": 0,
+                "non_rag_queries": 0,
+                "min_llm_time_ms": float('inf'),
+                "max_llm_time_ms": 0,
+                "recent_performances": []
+            }
+        
+        # Update provider/model statistics
+        stats = st.session_state.provider_model_stats[provider_model_key]
+        stats["total_queries"] += 1
+        stats["total_time_ms"] += current_performance["total_time_ms"]
+        stats["total_rag_time_ms"] += current_performance["rag_time_ms"]
+        stats["total_llm_time_ms"] += current_performance["llm_time_ms"]
+        
+        if use_rag:
+            stats["rag_queries"] += 1
+        else:
+            stats["non_rag_queries"] += 1
+            
+        stats["min_llm_time_ms"] = min(stats["min_llm_time_ms"], current_performance["llm_time_ms"])
+        stats["max_llm_time_ms"] = max(stats["max_llm_time_ms"], current_performance["llm_time_ms"])
+        
+        # Keep recent performances (last 10)
+        stats["recent_performances"].append(current_performance)
+        if len(stats["recent_performances"]) > 10:
+            stats["recent_performances"] = stats["recent_performances"][-10:]
     
     # Return response or handle error
     if llm_result["status"] == "success":
@@ -882,11 +936,23 @@ with tab_monitoring:
         st.subheader("📊 Session Statistics")
         
         # Calculate session stats
-        total_messages = len(st.session_state.get('messages', [])) - 1  # Exclude welcome message
-        user_messages = len([m for m in st.session_state.get('messages', []) if m['role'] == 'user'])
+        all_messages = st.session_state.get('messages', [])
+        user_messages = len([m for m in all_messages if m['role'] == 'user'])
+        assistant_messages = len([m for m in all_messages if m['role'] == 'assistant'])
+        total_conversation_messages = user_messages + assistant_messages
         
-        st.metric("Total Messages", total_messages)
-        st.metric("User Queries", user_messages)
+        # Display conversation metrics
+        col1a, col1b = st.columns(2)
+        with col1a:
+            st.metric("User Queries", user_messages)
+            st.metric("Assistant Responses", assistant_messages)
+        with col1b:
+            st.metric("Total Conversation", total_conversation_messages)
+            # Show conversation balance
+            if user_messages > 0:
+                balance_ratio = assistant_messages / user_messages
+                balance_status = "🟢 Balanced" if abs(balance_ratio - 1.0) < 0.1 else "🟡 Pending" if balance_ratio < 1.0 else "🔴 Unbalanced"
+                st.metric("Conversation Balance", balance_status)
         st.metric("Query History", len(st.session_state.get('query_history', [])))
         
         # System Configuration Status
@@ -1063,6 +1129,124 @@ with tab_monitoring:
                 st.metric("Response Quality", f"{business_metrics.get('response_quality_score', 0):.2f}")
             with biz_col4:
                 st.metric("Success Rate", f"{business_metrics.get('query_success_rate', 0):.2f}")
+    
+    st.divider()
+    
+    # Provider/Model Performance Comparison
+    if hasattr(st.session_state, 'provider_model_stats') and st.session_state.provider_model_stats:
+        st.subheader("🏆 Provider & Model Performance Comparison")
+        
+        provider_emoji = {
+            'OpenAI': '🔥',
+            'Groq': '⚡', 
+            'Google': '🧠',
+            'Ollama': '🏠'
+        }
+        
+        # Create comparison table
+        comparison_data = []
+        for provider_model_key, stats in st.session_state.provider_model_stats.items():
+            provider = stats["provider"]
+            model = stats["model"]
+            emoji = provider_emoji.get(provider, '🤖')
+            
+            # Calculate averages
+            avg_total_time = stats["total_time_ms"] / stats["total_queries"]
+            avg_llm_time = stats["total_llm_time_ms"] / stats["total_queries"]
+            avg_rag_time = stats["total_rag_time_ms"] / stats["rag_queries"] if stats["rag_queries"] > 0 else 0
+            
+            comparison_data.append({
+                "Provider": f"{emoji} {provider}",
+                "Model": model,
+                "Total Queries": stats["total_queries"],
+                "Avg Total Time (ms)": round(avg_total_time, 1),
+                "Avg LLM Time (ms)": round(avg_llm_time, 1),
+                "Avg RAG Time (ms)": round(avg_rag_time, 1) if avg_rag_time > 0 else "N/A",
+                "Min LLM Time (ms)": round(stats["min_llm_time_ms"], 1),
+                "Max LLM Time (ms)": round(stats["max_llm_time_ms"], 1),
+                "RAG Queries": stats["rag_queries"],
+                "Non-RAG Queries": stats["non_rag_queries"]
+            })
+        
+        # Sort by average LLM time (fastest first)
+        comparison_data.sort(key=lambda x: x["Avg LLM Time (ms)"])
+        
+        # Display comparison table
+        import pandas as pd
+        comparison_df = pd.DataFrame(comparison_data)
+        st.dataframe(comparison_df, use_container_width=True)
+        
+        # Performance insights
+        if len(comparison_data) > 1:
+            fastest = comparison_data[0]
+            slowest = comparison_data[-1]
+            
+            st.subheader("📊 Performance Insights")
+            
+            insight_col1, insight_col2, insight_col3 = st.columns(3)
+            
+            with insight_col1:
+                st.success(f"🏃‍♂️ **Fastest**: {fastest['Provider']} {fastest['Model']}")
+                st.caption(f"Avg LLM Time: {fastest['Avg LLM Time (ms)']}ms")
+                
+            with insight_col2:
+                st.info(f"🐌 **Slowest**: {slowest['Provider']} {slowest['Model']}")
+                st.caption(f"Avg LLM Time: {slowest['Avg LLM Time (ms)']}ms")
+                
+            with insight_col3:
+                speed_diff = slowest['Avg LLM Time (ms)'] - fastest['Avg LLM Time (ms)']
+                st.metric("Speed Difference", f"{speed_diff:.1f}ms")
+        
+        # Recent performance trends for current provider/model
+        current_provider = st.session_state.get('provider', 'Unknown')
+        current_model = st.session_state.get('model_name', 'Unknown')
+        current_key = f"{current_provider}::{current_model}"
+        
+        if current_key in st.session_state.provider_model_stats:
+            current_stats = st.session_state.provider_model_stats[current_key]
+            recent_perfs = current_stats["recent_performances"]
+            
+            if len(recent_perfs) >= 3:
+                st.subheader(f"📈 Recent Trend: {provider_emoji.get(current_provider, '🤖')} {current_provider} {current_model}")
+                
+                # Create trend data
+                recent_times = [p["llm_time_ms"] for p in recent_perfs[-10:]]
+                recent_timestamps = [p["timestamp"] for p in recent_perfs[-10:]]
+                
+                # Simple trend analysis
+                if len(recent_times) >= 3:
+                    avg_recent_3 = sum(recent_times[-3:]) / 3
+                    avg_older_3 = sum(recent_times[-6:-3]) / 3 if len(recent_times) >= 6 else avg_recent_3
+                    
+                    trend_col1, trend_col2, trend_col3 = st.columns(3)
+                    
+                    with trend_col1:
+                        st.metric("Last 3 Avg", f"{avg_recent_3:.1f}ms")
+                    with trend_col2:
+                        st.metric("Previous 3 Avg", f"{avg_older_3:.1f}ms")
+                    with trend_col3:
+                        trend_change = avg_recent_3 - avg_older_3
+                        trend_status = "🔺 Slower" if trend_change > 50 else "🔻 Faster" if trend_change < -50 else "➡️ Stable"
+                        st.metric("Trend", trend_status)
+        
+        # Export functionality
+        if st.button("📥 Export Performance Data"):
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            export_data = {
+                "export_timestamp": timestamp,
+                "provider_model_stats": st.session_state.provider_model_stats,
+                "performance_history": st.session_state.performance_history[-50:]  # Last 50 records
+            }
+            
+            import json
+            json_data = json.dumps(export_data, indent=2, default=str)
+            st.download_button(
+                label="💾 Download Performance Report",
+                data=json_data,
+                file_name=f"llm_performance_report_{timestamp}.json",
+                mime="application/json"
+            )
+            st.success("Performance data ready for download!")
     
     st.divider()
     

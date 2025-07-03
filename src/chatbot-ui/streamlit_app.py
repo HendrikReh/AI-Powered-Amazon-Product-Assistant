@@ -1236,7 +1236,7 @@ with tab_monitoring:
                 # Use custom styled display instead of st.metric for smaller text
                 st.markdown("""
                 <div style="background-color: #2D3748; padding: 0.75rem; border-radius: 6px; border: 1px solid #4A5568;">
-                    <div style="font-size: 0.9rem; color: #CBD5E0; font-weight: 500; margin-bottom: 0.25rem;">Conversation Balance</div>
+                    <div style="font-size: 0.9rem; color: #CBD5E0; font-weight: 500; margin-bottom: 0.25rem;">Ratio (Messages)</div>
                     <div style="font-size: 1rem; color: #E2E8F0; font-weight: 500;">{}</div>
                 </div>
                 """.format(balance_status), unsafe_allow_html=True)

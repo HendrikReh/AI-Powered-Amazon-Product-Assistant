@@ -6,12 +6,33 @@ Handles query analysis, document retrieval, and context generation for LLM respo
 import json
 import logging
 import re
+import uuid
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from pathlib import Path
 
 import os
 import weave
+
+# Import enhanced tracing utilities
+try:
+    import sys
+    from pathlib import Path
+    parent_dir = Path(__file__).parent.parent
+    sys.path.append(str(parent_dir))
+    
+    from tracing.trace_utils import (
+        TraceContext, get_current_trace_context, create_enhanced_trace_context,
+        update_trace_context, business_analyzer, BusinessMetricsAnalyzer
+    )
+except ImportError:
+    # Fallback for cases where tracing utils are not available
+    TraceContext = None
+    get_current_trace_context = lambda: None
+    create_enhanced_trace_context = lambda **kwargs: None
+    update_trace_context = lambda **kwargs: None
+    business_analyzer = None
+    BusinessMetricsAnalyzer = None
 
 # Check if running in Docker environment
 is_docker = os.getenv("CHROMA_HOST") is not None
@@ -117,9 +138,30 @@ class RAGQueryProcessor:
         }
     
     @weave.op()
-    def analyze_query(self, query: str) -> Tuple[str, List[str]]:
-        """Analyze query to determine type and extract key terms."""
+    def analyze_query(self, query: str, trace_id: str = None) -> Tuple[str, List[str]]:
+        """Analyze query to determine type and extract key terms with enhanced tracing."""
+        # Get or create trace context
+        trace_context = get_current_trace_context()
+        if not trace_context and trace_id:
+            trace_context = create_enhanced_trace_context()
+            
         query_lower = query.lower().strip()
+        
+        # Enhanced analysis using business analyzer if available
+        if business_analyzer:
+            query_intent = business_analyzer.classify_intent(query)
+            complexity = business_analyzer.calculate_complexity(query)
+            specificity = business_analyzer.measure_specificity(query)
+            product_focus = business_analyzer.extract_product_focus(query)
+            
+            # Update trace context with business metrics
+            if trace_context:
+                update_trace_context(
+                    query_intent=query_intent,
+                    complexity_score=complexity,
+                    specificity_score=specificity,
+                    product_focus=product_focus
+                )
         
         for query_type, patterns in self.query_patterns.items():
             for pattern in patterns:
@@ -163,21 +205,39 @@ class RAGQueryProcessor:
         return products
     
     @weave.op()
-    def build_context(self, query: str, max_products: int = 5, max_reviews: int = 3) -> QueryContext:
-        """Build context for RAG query."""
+    def build_context(self, query: str, max_products: int = 5, max_reviews: int = 3, trace_id: str = None) -> QueryContext:
+        """Build context for RAG query with enhanced tracing."""
+        # Get or propagate trace context
+        trace_context = get_current_trace_context()
+        if not trace_context and trace_id:
+            trace_context = create_enhanced_trace_context()
+        
         if not self.vector_db:
             logger.error("Vector database not initialized")
-            return QueryContext(query, "error", [], [], {"error": "Database not available"})
+            return QueryContext(query, "error", [], [], {
+                "error": "Database not available",
+                "trace_id": trace_context.trace_id if trace_context else None
+            })
         
-        query_type, extracted_terms = self.analyze_query(query)
+        # Analyze the query with trace propagation
+        query_type, extracted_terms = self.analyze_query(
+            query, 
+            trace_id=trace_context.trace_id if trace_context else trace_id
+        )
         logger.info(f"Query type: {query_type}, Terms: {extracted_terms}")
         
         products = []
         reviews = []
+        performance_metrics = {}
         metadata = {
             "query_type": query_type,
             "extracted_terms": extracted_terms,
-            "search_strategy": "semantic"
+            "search_strategy": "semantic",
+            "trace_context": {
+                "trace_id": trace_context.trace_id if trace_context else trace_id,
+                "session_id": trace_context.session_id if trace_context else None,
+                "conversation_turn": trace_context.conversation_turn if trace_context else 0
+            }
         }
         
         try:

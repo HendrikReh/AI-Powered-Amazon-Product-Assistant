@@ -246,6 +246,8 @@ AI-Powered-Amazon-Product-Assistant/
 │   ├── WEAVE_TRACING_GUIDE.md                         # LLM tracing & monitoring guide
 │   ├── EVALUATIONS.md                                # RAG evaluation framework documentation
 │   ├── SYNTHETIC_DATA.md                             # Synthetic test data generation guide
+│   ├── DASHBOARD_METRICS.md                          # Dashboard metrics interpretation & implementation
+│   ├── GEMINI_MESSAGE_HANDLING.md                    # Google Gemini integration guide
 │   └── DOCKER_TTY_FIXES.md                           # Container deployment fixes
 ├── 📄 pyproject.toml                                  # uv dependencies & config
 ├── 📄 docker-compose.yml                              # Multi-service container setup
@@ -483,6 +485,25 @@ This project includes comprehensive documentation to help you understand and wor
 - Weave integration for full traceability and performance monitoring
 - Mixed dataset creation combining original and synthetic data for robust testing
 - Best practices implementation and troubleshooting guide
+
+### [docs/DASHBOARD_METRICS.md](docs/DASHBOARD_METRICS.md)
+**Dashboard metrics interpretation & implementation guide**
+- Comprehensive documentation of all monitoring dashboard metrics
+- Session statistics including conversation balance logic and message ratio handling
+- Performance monitoring with provider-specific tracking and comparison
+- RAG system metrics including vector performance and context quality
+- Business intelligence integration with user journey analytics
+- Configuration status monitoring and system health indicators
+- Implementation details and troubleshooting guidelines
+
+### [docs/GEMINI_MESSAGE_HANDLING.md](docs/GEMINI_MESSAGE_HANDLING.md)
+**Google Gemini integration guide**
+- Complete Google GenAI client message formatting requirements
+- Role conversion and content validation for Gemini compatibility
+- Error resolution for INVALID_ARGUMENT and empty message parts
+- Performance monitoring and provider-specific baselines
+- Integration with Enhanced Tracing v2.0 system
+- Troubleshooting guide and best practices
 
 ### [docs/DOCKER_TTY_FIXES.md](docs/DOCKER_TTY_FIXES.md)
 **Containerized deployment compatibility guide**

@@ -6,6 +6,8 @@ Connects to external ChromaDB service in containerized environment.
 import os
 import json
 import logging
+import time
+import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 
@@ -13,6 +15,18 @@ import chromadb
 from chromadb.config import Settings
 from tqdm import tqdm
 import weave
+
+# Import enhanced tracing utilities
+try:
+    from ..tracing.trace_utils import (
+        get_current_trace_context, performance_monitor,
+        VectorPerformanceMonitor
+    )
+except ImportError:
+    # Fallback for cases where tracing utils are not available
+    get_current_trace_context = lambda: None
+    performance_monitor = None
+    VectorPerformanceMonitor = None
 
 logger = logging.getLogger(__name__)
 

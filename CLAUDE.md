@@ -13,6 +13,22 @@ uv sync
 uv run python -m ipykernel install --user --name ai-product-assistant
 ```
 
+### Ollama Local LLM Setup
+```bash
+# Install Ollama (if not already installed)
+# Visit https://ollama.com for installation instructions
+
+# Pull and run your model (example with Gemma 3 4B)
+ollama pull gemma3n:e4b
+ollama run gemma3n:e4b
+
+# Verify Ollama is running
+ollama list
+
+# The application will automatically connect to Ollama at http://localhost:11434
+# Configure OLLAMA_BASE_URL in .env if using different host/port
+```
+
 ### Running Applications
 ```bash
 # Run enhanced Streamlit chatbot interface with RAG and tab-based UI
@@ -23,7 +39,7 @@ make run-streamlit
 # Features:
 # - 🔧 Configuration Tab: Model settings, RAG configuration, system status
 # - 💬 Query Tab: Enhanced chat interface with smart suggestions and filters
-# - 📊 Monitoring Tab: Real-time performance metrics and Weave tracing
+# - 📊 Monitoring Tab: Real-time performance metrics and Enhanced Weave Tracing v2.0
 
 # Run data processing notebooks
 uv run jupyter notebook notebooks/data_preprocessing.ipynb
@@ -111,13 +127,14 @@ make clean-notebook-outputs
   - Fallback to local storage if service unavailable
   - Saves 670MB in container images
 - **Seamless Switching**: `query_processor.py` automatically imports correct implementation
-- **📖 Complete comparison guide**: See `docs/LOCAL_VS_DOCKER.md` for detailed analysis
+- **Complete comparison guide**: See `docs/LOCAL_VS_DOCKER.md` for detailed analysis
 
 ### Multi-Provider LLM Support
-The chatbot supports three LLM providers with different parameter compatibility:
+The chatbot supports four LLM providers with different parameter compatibility:
 - **OpenAI**: GPT-4o, GPT-4o-mini (supports temperature, max_tokens, top_p)
 - **Groq**: Llama-3.3-70b-versatile (supports temperature, max_tokens, top_p)  
 - **Google**: Gemini-2.0-flash (supports all parameters: temperature, max_tokens, top_p, top_k)
+- **Ollama**: Local models (supports temperature, max_tokens) - requires Ollama installation
 
 ### Environment Configuration
 Required API keys in `.env` file:
@@ -126,6 +143,9 @@ OPENAI_API_KEY=your_key_here
 GROQ_API_KEY=your_key_here  
 GOOGLE_API_KEY=your_key_here
 WANDB_API_KEY=your_key_here  # Optional for Weave tracing
+
+# Ollama configuration (optional)
+OLLAMA_BASE_URL=http://localhost:11434  # Default Ollama URL
 
 # Docker environment detection (optional)
 CHROMA_HOST=chromadb        # Triggers Docker vector database mode
@@ -162,19 +182,22 @@ else:
 - **Search Capabilities**: Semantic search, metadata filtering, hybrid queries
 - **Integration**: Seamless integration with existing LLM providers via enhanced prompts
 
-### Weave Tracing Integration
-- **Enhanced Multi-Operation Tracing**: Granular `@weave.op()` decorators on individual pipeline components
-- **Initialization Tracing**: `initialize_weave_tracing()` and `initialize_rag_processor()` with status tracking
-- **RAG Enhancement Tracing**: `apply_rag_enhancement()` with timing, context metrics, and error handling
-- **Provider-Specific LLM Tracing**: `call_llm_provider()` with request metadata, response metrics, and error types
-- **Comprehensive Pipeline Monitoring**: Enhanced `run_llm()` with end-to-end timing and component breakdown
-- **Real-Time UI Feedback**: Sidebar displays processing times, retrieval counts, and operation status
-- **Detailed Metadata Capture**: Query types, extracted terms, context quality, and provider-specific parameters
-- **Performance Analytics**: Sub-operation timing (RAG vs LLM), character counts, and success/failure rates
-- **Error Classification**: Structured error handling with error types, fallback strategies, and user feedback
-- **W&B Dashboard Integration**: Rich trace data with nested operations and comprehensive metadata
-- **Production Monitoring**: Zero-impact tracing with graceful degradation and optional activation
-- **Docker Compatibility**: Full containerized deployment support with trace persistence
+### Enhanced Weave Tracing Integration v2.0
+- **Three-Tier Architecture**: Context propagation (Tier 1), vector performance monitoring (Tier 2), business intelligence (Tier 3)
+- **Context Propagation**: Session-based trace contexts with unique IDs propagated across all operations
+- **Vector Performance Monitoring**: Embedding generation timing, search performance, cache hit rates, and result quality metrics
+- **Business Intelligence Tracing**: User journey tracking, intent classification, satisfaction prediction, and conversion analysis
+- **Multi-Operation Tracing**: Granular `@weave.op()` decorators on 53+ operations across 8 Python files
+- **Real-Time Analytics**: Live performance metrics, business KPIs, and user behavior insights in Streamlit UI
+- **Performance Optimization**: Embedding time tracking, search quality analysis, and cache performance monitoring
+- **User Journey Intelligence**: User type classification (Researcher, Buyer, Casual, Troubleshooter) and journey stage tracking
+- **Business Metrics**: Conversion potential, satisfaction prediction, recommendation effectiveness, and feature usage analytics
+- **Advanced Query Analysis**: Intent classification, complexity scoring, specificity measurement, and product focus extraction
+- **Session Management**: Cross-conversation context with user behavior patterns and pain point detection
+- **Enhanced UI Monitoring**: Business intelligence dashboard, vector performance metrics, and session analytics
+- **Production-Ready Fallbacks**: Zero single points of failure with comprehensive graceful degradation mechanisms
+- **Comprehensive Coverage**: End-to-end pipeline monitoring from query analysis to response generation with business insights
+- **📖 Complete tracing guide**: See `docs/WEAVE_TRACING_GUIDE.md` for detailed implementation and troubleshooting
 
 ### Package Management
 - **uv**: Modern Python package manager used instead of pip/conda
@@ -272,7 +295,7 @@ The system handles various query types with intelligent context retrieval:
 - **Configurable Generation**: Customizable difficulty distributions and query type weights
 - **Best Practices Implementation**: Following synthetic data generation standards
 - **Production Testing**: Automated test case creation for systematic evaluation
-- **📖 Complete guide**: See `docs/SYNTHETIC_DATA.md` for detailed implementation
+- **Complete guide**: See `docs/SYNTHETIC_DATA.md` for detailed implementation
 
 ## Docker Notes
 - **Dual-architecture deployment**: Automatically uses `vector_db_docker.py` for optimized containers
@@ -288,4 +311,26 @@ The system handles various query types with intelligent context retrieval:
 - **Network isolation**: Services communicate via dedicated Docker network
 - **TTY compatibility**: Handles production deployment issues (see DOCKER_TTY_FIXES.md)
 - **Weave tracing**: Full compatibility in containerized environments
-- **📖 Implementation details**: See `docs/LOCAL_VS_DOCKER.md` for comprehensive comparison
+- **Implementation details**: See `docs/LOCAL_VS_DOCKER.md` for comprehensive comparison
+
+## Memory Updates
+
+### Enhanced Tracing v2.0 Implementation (Sprint 1)
+- **Three-Tier Architecture**: Implemented context propagation, vector performance monitoring, and business intelligence tracking
+- **53+ Weave Operations**: Comprehensive instrumentation across 8 Python files with granular tracing
+- **Zero Single Points of Failure**: Production-ready fallback mechanisms across all components
+- **Business Intelligence**: User journey tracking, intent classification, conversion analysis, and satisfaction prediction
+- **Real-Time Analytics**: Live performance metrics and business KPIs in enhanced Streamlit dashboard
+- **Production Documentation**: Complete implementation guide in `docs/WEAVE_TRACING_GUIDE.md` and Sprint 1 summary in `docs/SPRINT_1.md`
+- **Fallback Coverage**: Comprehensive error handling for imports, vector database, performance monitoring, business intelligence, Weave tracing, and LLM providers
+- **Session Management**: Cross-conversation context with user behavior patterns and pain point detection
+- **Vector Performance**: Embedding optimization, cache analytics, and search quality monitoring
+- **User Experience**: Enhanced Streamlit interface with business intelligence insights and real-time monitoring
+
+### Code Management
+- Updated code management workflow to include README.md and PROJECT_CANVAS.md updates alongside CLAUDE.md
+- Ensured consistent memory tracking across project documentation files
+- Comprehensive Sprint 1 documentation reflecting Enhanced Tracing v2.0 achievements
+
+### UI/UX Design
+- The Streamlit app follows professional UX typography standards with a clear visual hierarchy that guides users naturally through the interface

@@ -551,6 +551,286 @@ else:
     rag_init_result = st.session_state.rag_init_result
     rag_processor = st.session_state.rag_processor
 
+# Configure page styling for better UX and visual hierarchy
+st.markdown("""
+<style>
+/* Enhanced Visual Hierarchy */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Main Title - Large and prominent */
+h1 {
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    color: #2986cc !important;
+    margin-bottom: 0.5rem !important;
+    text-align: center;
+}
+
+/* Tab Headers - Medium size */
+.stTabs [data-baseweb="tab-list"] button {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1.5rem !important;
+}
+
+/* Section Headers (h2) - Prominent but smaller than title */
+h2 {
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    color: #2986cc !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1rem !important;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 0.5rem;
+}
+
+/* Subsection Headers (h3) - Clear hierarchy */
+h3 {
+    font-size: 1.3rem !important;
+    font-weight: 500 !important;
+    color: #2986cc !important;
+    margin-top: 1.2rem !important;
+    margin-bottom: 0.8rem !important;
+}
+
+/* Regular text - Optimized readability */
+.stMarkdown p, .stMarkdown li, .stMarkdown div {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    color: #E2E8F0 !important;
+}
+
+/* Metric labels - Clear and consistent */
+.metric-container label {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    color: #CBD5E0 !important;
+}
+
+/* Metric values - Prominent display */
+.metric-container [data-testid="metric-container"] > div:first-child {
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+}
+
+/* Table headers - Professional appearance */
+.stDataFrame thead th {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    background-color: #2D3748 !important;
+    color: #F7FAFC !important;
+    border-bottom: 2px solid #4A5568 !important;
+    padding: 0.75rem !important;
+}
+
+/* Table cells - Improved readability */
+.stDataFrame tbody td {
+    font-size: 0.85rem !important;
+    padding: 0.5rem !important;
+    color: #E2E8F0 !important;
+    background-color: #1A202C !important;
+}
+
+/* Info boxes and alerts - Consistent sizing */
+.stAlert, .stInfo, .stSuccess, .stWarning, .stError {
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+}
+
+/* Chat messages - Optimized for conversation with proper contrast */
+.stChatMessage {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+}
+
+/* User messages - Dark background with light text */
+.stChatMessage[data-testid="user-message"] {
+    background-color: #2E3B4E !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    margin: 0.5rem 0 !important;
+    border: 1px solid #4A5568 !important;
+}
+
+.stChatMessage[data-testid="user-message"] .stMarkdown {
+    color: #F7FAFC !important;
+    font-weight: 500 !important;
+}
+
+/* Assistant messages - Dark background with light text and accent */
+.stChatMessage[data-testid="assistant-message"] {
+    background-color: #1A202C !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    margin: 0.5rem 0 !important;
+    border-left: 4px solid #4CAF50 !important;
+    border: 1px solid #2D3748 !important;
+}
+
+.stChatMessage[data-testid="assistant-message"] .stMarkdown {
+    color: #E2E8F0 !important;
+    font-weight: 400 !important;
+}
+
+/* General chat message content - Light text for dark backgrounds */
+.stChatMessage .stMarkdown p,
+.stChatMessage .stMarkdown div,
+.stChatMessage .stMarkdown span,
+.stChatMessage div[data-testid="stMarkdownContainer"] {
+    color: #E2E8F0 !important;
+    background-color: transparent !important;
+}
+
+/* Chat input styling */
+.stChatInput input {
+    font-size: 0.95rem !important;
+    color: #F7FAFC !important;
+    background-color: #2D3748 !important;
+    border: 1px solid #4A5568 !important;
+}
+
+/* Message avatar styling */
+.stChatMessage img {
+    border-radius: 50% !important;
+    border: 2px solid #E0E0E0 !important;
+}
+
+/* Force light text in all chat message elements */
+div[data-testid="chatAvatarIcon-user"] ~ div,
+div[data-testid="chatAvatarIcon-assistant"] ~ div {
+    color: #E2E8F0 !important;
+}
+
+/* Override any inherited styling in chat messages with light text */
+.stChatMessage * {
+    color: #E2E8F0 !important;
+}
+
+/* User message specific light text */
+.stChatMessage[data-testid="user-message"] * {
+    color: #F7FAFC !important;
+}
+
+/* Specific targeting for markdown content in chat - light text */
+.stChatMessage .element-container .stMarkdown,
+.stChatMessage .element-container .stMarkdown *,
+.stChatMessage [data-testid="stMarkdownContainer"],
+.stChatMessage [data-testid="stMarkdownContainer"] * {
+    color: #E2E8F0 !important;
+    text-shadow: none !important;
+}
+
+/* User message markdown - even lighter */
+.stChatMessage[data-testid="user-message"] .element-container .stMarkdown,
+.stChatMessage[data-testid="user-message"] .element-container .stMarkdown *,
+.stChatMessage[data-testid="user-message"] [data-testid="stMarkdownContainer"],
+.stChatMessage[data-testid="user-message"] [data-testid="stMarkdownContainer"] * {
+    color: #F7FAFC !important;
+}
+
+/* Ensure code blocks in chat are readable on dark background */
+.stChatMessage code,
+.stChatMessage pre {
+    background-color: #4A5568 !important;
+    color: #F7FAFC !important;
+    border: 1px solid #718096 !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 4px !important;
+}
+
+/* Captions - Subtle but readable */
+.stCaption {
+    font-size: 0.8rem !important;
+    color: #A0AEC0 !important;
+    line-height: 1.4 !important;
+}
+
+/* Button text - Clear and accessible */
+.stButton button {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+/* Sidebar text - Compact but readable */
+.stSidebar .stMarkdown {
+    font-size: 0.9rem !important;
+}
+
+/* Code blocks - Monospace optimization */
+code {
+    font-size: 0.85rem !important;
+    background-color: #2D3748 !important;
+    color: #F7FAFC !important;
+    padding: 0.2rem 0.4rem !important;
+    border-radius: 3px !important;
+    border: 1px solid #4A5568 !important;
+}
+
+/* Expandable sections - Clear hierarchy */
+.streamlit-expanderHeader {
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+/* Performance metrics - Enhanced visibility */
+.performance-metric {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+}
+
+/* Provider icons - Consistent sizing */
+.provider-icon {
+    font-size: 1.2rem !important;
+}
+
+/* Enhanced data table styling */
+.stDataFrame {
+    border-radius: 8px !important;
+    border: 1px solid #E0E0E0 !important;
+    overflow: hidden !important;
+}
+
+/* System status indicators */
+.status-indicator {
+    padding: 0.5rem 1rem !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+/* Performance cards */
+.performance-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+    padding: 1.5rem !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    h1 { font-size: 2rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3 { font-size: 1.2rem !important; }
+    .metric-container [data-testid="metric-container"] > div:first-child {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 1.8rem !important; }
+    h2 { font-size: 1.3rem !important; }
+    h3 { font-size: 1.1rem !important; }
+    .stMarkdown p, .stMarkdown li, .stMarkdown div {
+        font-size: 0.9rem !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Set up page title and description
 st.title("🛍️ Amazon Electronics Assistant")
 if st.session_state.get('rag_processor'):
@@ -1079,7 +1359,13 @@ with tab_monitoring:
         }
         
         provider_icon = provider_emoji.get(llm_provider, '🤖')
-        st.info(f"{provider_icon} **{llm_provider}** | Model: {llm_model}")
+        st.markdown(f"""
+        <div style="background-color: #2D3748; padding: 1rem; border-radius: 8px; border-left: 4px solid #90CAF9; margin-bottom: 1rem;">
+            <span style="font-size: 1.2rem;">{provider_icon}</span> 
+            <strong style="font-size: 1.1rem; color: #90CAF9;">{llm_provider}</strong> 
+            <span style="color: #CBD5E0; font-size: 0.95rem;">| Model: {llm_model}</span>
+        </div>
+        """, unsafe_allow_html=True)
         
         perf_col1, perf_col2, perf_col3 = st.columns(3)
         
@@ -1186,16 +1472,34 @@ with tab_monitoring:
             insight_col1, insight_col2, insight_col3 = st.columns(3)
             
             with insight_col1:
-                st.success(f"🏃‍♂️ **Fastest**: {fastest['Provider']} {fastest['Model']}")
-                st.caption(f"Avg LLM Time: {fastest['Avg LLM Time (ms)']}ms")
+                st.markdown(f"""
+                <div style="background-color: #1A202C; padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid #4CAF50;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏃‍♂️</div>
+                    <div style="font-weight: 600; color: #81C784; font-size: 1rem;">Fastest</div>
+                    <div style="font-size: 0.9rem; color: #E2E8F0;">{fastest['Provider']} {fastest['Model']}</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #81C784; margin-top: 0.5rem;">{fastest['Avg LLM Time (ms)']}ms</div>
+                </div>
+                """, unsafe_allow_html=True)
                 
             with insight_col2:
-                st.info(f"🐌 **Slowest**: {slowest['Provider']} {slowest['Model']}")
-                st.caption(f"Avg LLM Time: {slowest['Avg LLM Time (ms)']}ms")
+                st.markdown(f"""
+                <div style="background-color: #1A202C; padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid #FFB74D;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🐌</div>
+                    <div style="font-weight: 600; color: #FFB74D; font-size: 1rem;">Slowest</div>
+                    <div style="font-size: 0.9rem; color: #E2E8F0;">{slowest['Provider']} {slowest['Model']}</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #FFB74D; margin-top: 0.5rem;">{slowest['Avg LLM Time (ms)']}ms</div>
+                </div>
+                """, unsafe_allow_html=True)
                 
             with insight_col3:
                 speed_diff = slowest['Avg LLM Time (ms)'] - fastest['Avg LLM Time (ms)']
-                st.metric("Speed Difference", f"{speed_diff:.1f}ms")
+                st.markdown(f"""
+                <div style="background-color: #1A202C; padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid #CE93D8;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚡</div>
+                    <div style="font-weight: 600; color: #CE93D8; font-size: 1rem;">Speed Gap</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #CE93D8; margin-top: 0.5rem;">{speed_diff:.1f}ms</div>
+                </div>
+                """, unsafe_allow_html=True)
         
         # Recent performance trends for current provider/model
         current_provider = st.session_state.get('provider', 'Unknown')

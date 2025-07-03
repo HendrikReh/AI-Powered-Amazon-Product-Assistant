@@ -262,6 +262,7 @@ def apply_rag_enhancement(query: str, rag_processor, max_products: int, max_revi
             }
         }
 
+@weave.op()
 def call_llm_provider(provider: str, model_name: str, messages: list, temperature: float, 
                      max_tokens: int, top_p: float, top_k: int, client):
     """Call specific LLM provider with comprehensive tracing."""

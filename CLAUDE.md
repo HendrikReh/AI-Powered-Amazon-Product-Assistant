@@ -289,3 +289,9 @@ The system handles various query types with intelligent context retrieval:
 - **TTY compatibility**: Handles production deployment issues (see DOCKER_TTY_FIXES.md)
 - **Weave tracing**: Full compatibility in containerized environments
 - **📖 Implementation details**: See `docs/LOCAL_VS_DOCKER.md` for comprehensive comparison
+
+## Memory Updates
+
+### Code Management
+- Updated code management workflow to include README.md and PROJECT_CANVAS.md updates alongside CLAUDE.md
+- Ensured consistent memory tracking across project documentation files

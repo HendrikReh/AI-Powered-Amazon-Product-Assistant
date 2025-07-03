@@ -5,6 +5,8 @@ Handles document ingestion, embedding, and retrieval using ChromaDB.
 
 import json
 import logging
+import time
+import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 
@@ -13,6 +15,18 @@ from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 from tqdm import tqdm
 import weave
+
+# Import enhanced tracing utilities
+try:
+    from ..tracing.trace_utils import (
+        get_current_trace_context, performance_monitor,
+        VectorPerformanceMonitor
+    )
+except ImportError:
+    # Fallback for cases where tracing utils are not available
+    get_current_trace_context = lambda: None
+    performance_monitor = None
+    VectorPerformanceMonitor = None
 
 logger = logging.getLogger(__name__)
 
@@ -218,13 +232,26 @@ class ElectronicsVectorDB:
         where_clause = where_conditions
         
         try:
+            # Start performance tracking
+            start_time = time.time()
+            trace_context = get_current_trace_context()
+            
+            # Track embedding generation performance
+            embedding_start = time.time()
+            query_embedding = self.embedding_function([query])[0]
+            embedding_time = time.time() - embedding_start
+            
+            # Perform the search with timing
+            search_start = time.time()
             results = self.collection.query(
                 query_texts=[query],
                 n_results=n_results,
                 where=where_clause
             )
+            search_time = time.time() - search_start
+            total_time = time.time() - start_time
             
-            return {
+            base_result = {
                 "query": query,
                 "results": results,
                 "filters_applied": {
@@ -234,6 +261,39 @@ class ElectronicsVectorDB:
                     "store": store
                 }
             }
+            
+            # Enhanced performance monitoring
+            if performance_monitor:
+                # Track embedding performance
+                embedding_metrics = performance_monitor.track_embedding_performance(
+                    query, embedding_time, len(query_embedding)
+                )
+                
+                # Track search performance
+                search_metrics = performance_monitor.track_search_performance(
+                    search_time, results, query
+                )
+                
+                # Analyze search quality
+                quality_metrics = performance_monitor.analyze_search_quality(
+                    query, results, {"num_products": len(results.get('ids', [{}])[0])}
+                )
+                
+                # Add performance metrics
+                base_result["performance_metrics"] = {
+                    "total_time_ms": round(total_time * 1000, 2),
+                    "embedding_metrics": embedding_metrics,
+                    "search_metrics": search_metrics,
+                    "quality_metrics": quality_metrics,
+                    "collection_size": self.collection.count(),
+                    "trace_context": {
+                        "trace_id": trace_context.trace_id if trace_context else None,
+                        "session_id": trace_context.session_id if trace_context else None
+                    }
+                }
+            
+            return base_result
+            
         except Exception as e:
             logger.error(f"Search failed: {e}")
             return {"error": str(e)}
@@ -255,17 +315,63 @@ class ElectronicsVectorDB:
             where_conditions["parent_asin"] = product_asin
         
         try:
+            # Start performance tracking
+            start_time = time.time()
+            trace_context = get_current_trace_context()
+            
+            # Track embedding generation performance
+            embedding_start = time.time()
+            query_embedding = self.embedding_function([query])[0]
+            embedding_time = time.time() - embedding_start
+            
+            # Perform the search with timing
+            search_start = time.time()
             results = self.collection.query(
                 query_texts=[query],
                 n_results=n_results,
                 where=where_conditions
             )
+            search_time = time.time() - search_start
+            total_time = time.time() - start_time
             
-            return {
+            base_result = {
                 "query": query,
                 "results": results,
                 "product_asin": product_asin
             }
+            
+            # Enhanced performance monitoring
+            if performance_monitor:
+                # Track embedding performance
+                embedding_metrics = performance_monitor.track_embedding_performance(
+                    query, embedding_time, len(query_embedding)
+                )
+                
+                # Track search performance
+                search_metrics = performance_monitor.track_search_performance(
+                    search_time, results, query
+                )
+                
+                # Analyze search quality
+                quality_metrics = performance_monitor.analyze_search_quality(
+                    query, results, {"num_reviews": len(results.get('ids', [{}])[0])}
+                )
+                
+                # Add performance metrics
+                base_result["performance_metrics"] = {
+                    "total_time_ms": round(total_time * 1000, 2),
+                    "embedding_metrics": embedding_metrics,
+                    "search_metrics": search_metrics,
+                    "quality_metrics": quality_metrics,
+                    "collection_size": self.collection.count(),
+                    "trace_context": {
+                        "trace_id": trace_context.trace_id if trace_context else None,
+                        "session_id": trace_context.session_id if trace_context else None
+                    }
+                }
+            
+            return base_result
+            
         except Exception as e:
             logger.error(f"Review search failed: {e}")
             return {"error": str(e)}

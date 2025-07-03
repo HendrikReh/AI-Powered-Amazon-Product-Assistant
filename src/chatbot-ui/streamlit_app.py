@@ -3,6 +3,7 @@ import weave
 from openai import OpenAI
 from groq import Groq
 from google import genai
+import ollama
 import sys
 import time
 from pathlib import Path
@@ -15,6 +16,26 @@ sys.path.append(str(parent_dir))
 from core.config import config
 from rag.query_processor import create_rag_processor
 
+# Import enhanced tracing utilities
+try:
+    from tracing.trace_utils import (
+        create_enhanced_trace_context, get_current_trace_context,
+        update_trace_context, business_analyzer
+    )
+    from tracing.business_intelligence import (
+        track_business_interaction, get_business_session_summary,
+        business_tracker
+    )
+except ImportError:
+    # Fallback for cases where tracing utils are not available
+    create_enhanced_trace_context = lambda **kwargs: None
+    get_current_trace_context = lambda: None
+    update_trace_context = lambda **kwargs: None
+    business_analyzer = None
+    track_business_interaction = lambda *args, **kwargs: {}
+    get_business_session_summary = lambda *args: {}
+    business_tracker = None
+
 def get_llm_client():
     """Get or create LLM client based on current provider."""
     provider = st.session_state.get('provider', 'OpenAI')
@@ -22,6 +43,8 @@ def get_llm_client():
         return OpenAI(api_key=config.OPENAI_API_KEY)
     elif provider == "Groq":
         return Groq(api_key=config.GROQ_API_KEY)
+    elif provider == "Ollama":
+        return ollama.Client(host=config.OLLAMA_BASE_URL)
     else:
         return genai.Client(api_key=config.GOOGLE_API_KEY)
 
@@ -173,16 +196,24 @@ def initialize_weave_tracing():
             "message": "ℹ️ Weave tracing disabled (no WANDB_API_KEY)"
         }
 
-def apply_rag_enhancement(query: str, rag_processor, max_products: int, max_reviews: int):
-    """Apply RAG enhancement to user query with detailed tracing."""
+@weave.op()
+def apply_rag_enhancement(query: str, rag_processor, max_products: int, max_reviews: int, session_id: str = None, conversation_turn: int = 0):
+    """Apply RAG enhancement to user query with comprehensive tracing."""
     start_time = time.time()
     
+    # Create enhanced trace context
+    trace_context = create_enhanced_trace_context(
+        session_id=session_id or str(st.session_state.get('session_id', 'default')),
+        conversation_turn=conversation_turn
+    )
+    
     try:
-        # Build context with custom limits
+        # Build context with enhanced tracing
         context = rag_processor.build_context(
             query,
             max_products=max_products,
-            max_reviews=max_reviews
+            max_reviews=max_reviews,
+            trace_id=trace_context.trace_id if trace_context else None
         )
         
         rag_applied = bool(context.products or context.reviews)
@@ -193,19 +224,28 @@ def apply_rag_enhancement(query: str, rag_processor, max_products: int, max_revi
         
         processing_time = time.time() - start_time
         
-        return {
+        # Enhanced result with comprehensive context
+        result = {
             "status": "success",
             "rag_applied": rag_applied,
             "context": {
                 "query_type": context.query_type,
                 "num_products": len(context.products),
                 "num_reviews": len(context.reviews),
-                "extracted_terms": context.metadata.get("extracted_terms", [])
+                "extracted_terms": context.metadata.get("extracted_terms", []),
+                "performance_metrics": context.metadata.get("performance_metrics", {})
             },
             "enhanced_prompt": enhanced_prompt,
             "processing_time_ms": round(processing_time * 1000, 2),
-            "original_query": query
+            "original_query": query,
+            "trace_metadata": {
+                "trace_id": trace_context.trace_id if trace_context else None,
+                "session_id": trace_context.session_id if trace_context else session_id,
+                "conversation_turn": conversation_turn
+            }
         }
+        
+        return result
         
     except Exception as e:
         processing_time = time.time() - start_time
@@ -214,7 +254,12 @@ def apply_rag_enhancement(query: str, rag_processor, max_products: int, max_revi
             "error": str(e),
             "processing_time_ms": round(processing_time * 1000, 2),
             "original_query": query,
-            "fallback": "Using original query"
+            "fallback": "Using original query",
+            "trace_metadata": {
+                "trace_id": trace_context.trace_id if trace_context else None,
+                "session_id": trace_context.session_id if trace_context else session_id,
+                "conversation_turn": conversation_turn
+            }
         }
 
 def call_llm_provider(provider: str, model_name: str, messages: list, temperature: float, 
@@ -248,6 +293,16 @@ def call_llm_provider(provider: str, model_name: str, messages: list, temperatur
                     "top_k": top_k
                 }
             ).text
+        elif provider == "Ollama":
+            # Ollama API format
+            response = client.chat(
+                model=model_name,
+                messages=messages,
+                options={
+                    "temperature": temperature,
+                    "num_predict": max_tokens
+                }
+            )["message"]["content"]
         else:
             # OpenAI and Groq support top_p but not top_k
             completion = client.chat.completions.create(
@@ -281,7 +336,7 @@ def call_llm_provider(provider: str, model_name: str, messages: list, temperatur
 
 @weave.op()
 def run_llm(client, messages):
-    """Enhanced run_llm function with comprehensive tracing and error handling."""
+    """Enhanced run_llm function with comprehensive business intelligence tracing."""
     overall_start_time = time.time()
     
     # Get configuration from session state
@@ -293,17 +348,27 @@ def run_llm(client, messages):
     top_k = st.session_state.get('top_k', 40)
     use_rag = st.session_state.get('use_rag', False)
     
+    # Session management for enhanced tracing
+    session_id = st.session_state.get('session_id', str(time.time()))
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = session_id
+    
+    conversation_turn = len([m for m in messages if m['role'] == 'user'])
+    
     # Initialize response structure
     trace_data = {
         "provider": provider,
         "model": model_name,
         "use_rag": use_rag,
-        "message_count": len(messages)
+        "message_count": len(messages),
+        "session_id": session_id,
+        "conversation_turn": conversation_turn
     }
     
     # Prepare messages for LLM
     llm_messages = messages.copy()
     rag_result = None
+    business_intelligence = None
     
     # Apply RAG if enabled and user message exists
     if use_rag and st.session_state.rag_processor and len(messages) > 0:
@@ -313,12 +378,14 @@ def run_llm(client, messages):
             max_products = st.session_state.get('max_products', 5)
             max_reviews = st.session_state.get('max_reviews', 3)
             
-            # Apply RAG enhancement with tracing
+            # Apply RAG enhancement with enhanced tracing
             rag_result = apply_rag_enhancement(
                 latest_message["content"],
                 st.session_state.rag_processor,
                 max_products,
-                max_reviews
+                max_reviews,
+                session_id,
+                conversation_turn
             )
             
             trace_data["rag_result"] = rag_result
@@ -345,20 +412,44 @@ def run_llm(client, messages):
     
     total_time = time.time() - overall_start_time
     
+    # Business Intelligence Tracking
+    if llm_result["status"] == "success" and len(messages) > 0:
+        latest_user_message = messages[-1]["content"] if messages[-1]["role"] == "user" else ""
+        response = llm_result["response"]
+        context = rag_result.get("context", {}) if rag_result else {}
+        
+        # Track business intelligence
+        try:
+            business_intelligence = track_business_interaction(
+                query=latest_user_message,
+                response=response,
+                context=context,
+                session_id=session_id,
+                conversation_turn=conversation_turn
+            )
+            
+            # Store business intelligence for monitoring
+            st.session_state.last_business_intelligence = business_intelligence
+            
+        except Exception as e:
+            st.session_state.last_business_intelligence = {"error": str(e)}
+    
     # Combine all trace data
     final_trace = {
         **trace_data,
         "llm_result": llm_result,
+        "business_intelligence": business_intelligence,
         "total_time_ms": round(total_time * 1000, 2),
         "success": llm_result["status"] == "success"
     }
     
-    # Store performance metrics for monitoring tab
+    # Store enhanced performance metrics for monitoring tab
     if llm_result["status"] == "success":
         st.session_state.last_performance = {
             "total_time_ms": final_trace['total_time_ms'],
             "rag_time_ms": rag_result['processing_time_ms'] if rag_result and rag_result["status"] == "success" else 0,
-            "llm_time_ms": llm_result['response_time_ms']
+            "llm_time_ms": llm_result['response_time_ms'],
+            "business_metrics": business_intelligence.get("business_metrics", {}) if business_intelligence else {}
         }
     
     # Return response or handle error
@@ -433,12 +524,14 @@ with tab_config:
         st.subheader("🤖 Model Selection")
         
         # Provider and model selection
-        provider = st.selectbox("Provider", ["OpenAI", "Groq", "Google"])
+        provider = st.selectbox("Provider", ["OpenAI", "Groq", "Google", "Ollama"])
         
         if provider == "OpenAI":
             model_name = st.selectbox("Model", ["gpt-4o-mini", "gpt-4o"])
         elif provider == "Groq":
             model_name = st.selectbox("Model", ["llama-3.3-70b-versatile"])
+        elif provider == "Ollama":
+            model_name = st.selectbox("Model", ["gemma3n:e4b", "llama3.2:latest"], help="Make sure the model is available in your Ollama installation")
         else:
             model_name = st.selectbox("Model", ["gemini-2.0-flash"])
 
@@ -449,6 +542,8 @@ with tab_config:
         # Parameter support info
         if provider == "Google":
             st.success("✅ All parameters supported")
+        elif provider == "Ollama":
+            st.success("✅ Temperature supported (local model)")
         else:
             st.warning("⚠️ Top-k not supported by OpenAI/Groq")
     
@@ -804,9 +899,9 @@ with tab_monitoring:
         else:
             st.write("No queries yet")
         
-        # RAG Performance (if available)
+        # Enhanced RAG Performance (if available)
         if st.session_state.get('rag_processor') and st.session_state.get('use_rag', False):
-            st.subheader("🛍️ RAG Performance")
+            st.subheader("🛍️ Enhanced RAG Performance")
             st.write(f"**Max Products:** {st.session_state.get('max_products', 5)}")
             st.write(f"**Max Reviews:** {st.session_state.get('max_reviews', 3)}")
             st.write("**Database:** 1,000 products, 20,000 reviews")
@@ -818,12 +913,69 @@ with tab_monitoring:
                 st.success(f"Last Query: Found {context['num_products']} products, {context['num_reviews']} reviews")
                 st.caption(f"Query type: {context['query_type']}")
                 st.caption(f"Processing time: {rag_res['processing_time_ms']}ms")
+                
+                # Display performance metrics if available
+                perf_metrics = context.get('performance_metrics', {})
+                if perf_metrics:
+                    with st.expander("🔍 Vector Database Performance", expanded=False):
+                        for search_type, metrics in perf_metrics.items():
+                            if isinstance(metrics, dict) and 'embedding_metrics' in metrics:
+                                st.write(f"**{search_type.title()} Search:**")
+                                emb_metrics = metrics['embedding_metrics']
+                                search_metrics = metrics['search_metrics']
+                                quality_metrics = metrics['quality_metrics']
+                                
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    st.metric("Embedding Time", f"{emb_metrics.get('embedding_time_ms', 0):.1f}ms")
+                                with col2:
+                                    st.metric("Search Time", f"{search_metrics.get('search_time_ms', 0):.1f}ms")
+                                with col3:
+                                    st.metric("Relevance Score", f"{quality_metrics.get('relevance_score', 0):.2f}")
             
             # Display RAG error if any
             if hasattr(st.session_state, 'last_rag_error'):
                 st.error(f"Last RAG Error: {st.session_state.last_rag_error}")
+        
+        # Business Intelligence Metrics
+        if hasattr(st.session_state, 'last_business_intelligence'):
+            business_intel = st.session_state.last_business_intelligence
+            
+            if "error" not in business_intel:
+                st.subheader("📊 Business Intelligence")
+                
+                # User Journey Insights
+                user_journey = business_intel.get('user_journey', {})
+                if user_journey:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("User Type", user_journey.get('user_type', 'Unknown').title())
+                        st.metric("Journey Stage", user_journey.get('journey_stage', 'Unknown').title())
+                    with col2:
+                        st.metric("Queries in Session", user_journey.get('queries_count', 0))
+                        avg_satisfaction = sum(user_journey.get('satisfaction_scores', [0])) / max(len(user_journey.get('satisfaction_scores', [1])), 1)
+                        st.metric("Avg Satisfaction", f"{avg_satisfaction:.2f}")
+                
+                # Business Metrics
+                business_metrics = business_intel.get('business_metrics', {})
+                if business_metrics:
+                    with st.expander("📈 Detailed Business Metrics", expanded=False):
+                        metric_col1, metric_col2 = st.columns(2)
+                        with metric_col1:
+                            st.metric("Conversion Potential", f"{business_metrics.get('conversion_potential', 0):.2f}")
+                            st.metric("Response Quality", f"{business_metrics.get('response_quality_score', 0):.2f}")
+                        with metric_col2:
+                            st.metric("Recommendation Effectiveness", f"{business_metrics.get('recommendation_effectiveness', 0):.2f}")
+                            st.metric("Query Success Rate", f"{business_metrics.get('query_success_rate', 0):.2f}")
+                
+                # Feature Usage
+                feature_usage = business_intel.get('feature_usage', {})
+                if feature_usage:
+                    with st.expander("🎯 Feature Usage Analytics", expanded=False):
+                        for feature, count in feature_usage.items():
+                            st.write(f"**{feature.replace('_', ' ').title()}:** {count}")
     
-    # Real-time Performance Metrics
+    # Enhanced Real-time Performance Metrics
     if hasattr(st.session_state, 'last_performance'):
         st.divider()
         st.subheader("⚡ Latest Query Performance")
@@ -843,6 +995,21 @@ with tab_monitoring:
             rag_percentage = (perf['rag_time_ms'] / perf['total_time_ms']) * 100
             llm_percentage = (perf['llm_time_ms'] / perf['total_time_ms']) * 100
             st.caption(f"Breakdown: RAG {rag_percentage:.1f}% | LLM {llm_percentage:.1f}%")
+        
+        # Business performance metrics
+        business_metrics = perf.get('business_metrics', {})
+        if business_metrics:
+            st.subheader("📊 Business Performance Metrics")
+            biz_col1, biz_col2, biz_col3, biz_col4 = st.columns(4)
+            
+            with biz_col1:
+                st.metric("User Satisfaction", f"{business_metrics.get('user_satisfaction_prediction', 0):.2f}")
+            with biz_col2:
+                st.metric("Conversion Potential", f"{business_metrics.get('conversion_potential', 0):.2f}")
+            with biz_col3:
+                st.metric("Response Quality", f"{business_metrics.get('response_quality_score', 0):.2f}")
+            with biz_col4:
+                st.metric("Success Rate", f"{business_metrics.get('query_success_rate', 0):.2f}")
     
     st.divider()
     
@@ -858,6 +1025,36 @@ with tab_monitoring:
     else:
         st.subheader("📈 Weave Tracing")
         st.warning("Weave tracing is not active. Add WANDB_API_KEY to enable detailed monitoring.")
+    
+    # Session Analytics
+    if hasattr(st.session_state, 'session_id') and business_tracker:
+        try:
+            session_summary = get_business_session_summary(st.session_state.session_id)
+            
+            if "error" not in session_summary:
+                st.subheader("👤 Session Analytics")
+                
+                session_overview = session_summary.get('session_overview', {})
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write(f"**User Type:** {session_overview.get('user_type', 'Unknown').title()}")
+                    st.write(f"**Journey Stage:** {session_overview.get('journey_stage', 'Unknown').title()}")
+                    st.write(f"**Total Queries:** {session_overview.get('total_queries', 0)}")
+                
+                with col2:
+                    st.write(f"**Session Duration:** {session_overview.get('session_duration', 0):.1f}s")
+                    st.write(f"**Avg Satisfaction:** {session_overview.get('avg_satisfaction', 0):.2f}")
+                
+                # Business recommendations
+                recommendations = session_summary.get('recommendations', [])
+                if recommendations:
+                    with st.expander("💡 Business Recommendations", expanded=False):
+                        for i, rec in enumerate(recommendations, 1):
+                            st.write(f"{i}. {rec}")
+        
+        except Exception as e:
+            st.warning(f"Session analytics unavailable: {str(e)}")
     
     # System Health Check
     st.subheader("🏥 System Health")

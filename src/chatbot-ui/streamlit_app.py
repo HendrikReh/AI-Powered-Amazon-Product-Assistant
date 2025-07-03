@@ -1231,7 +1231,13 @@ with tab_monitoring:
             # Show conversation balance with smaller font
             if user_messages > 0:
                 balance_ratio = assistant_messages / user_messages
-                balance_status = "🟢 Balanced" if abs(balance_ratio - 1.0) < 0.1 else "🟡 Pending" if balance_ratio < 1.0 else "🔴 Unbalanced"
+                # More accurate balance logic accounting for welcome messages and normal chat flow
+                if balance_ratio < 0.8:  # More user messages than assistant (assistant behind)
+                    balance_status = "🟡 Pending"
+                elif balance_ratio <= 2.0:  # Normal range (1:1 to 1:2 ratio, accounts for welcome messages)
+                    balance_status = "🟢 Balanced"
+                else:  # Significantly more assistant messages (unusual, >2:1 ratio)
+                    balance_status = "🔴 Unbalanced"
                 
                 # Use custom styled display instead of st.metric for smaller text
                 st.markdown("""

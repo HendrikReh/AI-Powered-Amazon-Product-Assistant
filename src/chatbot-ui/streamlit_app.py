@@ -1228,11 +1228,18 @@ with tab_monitoring:
             st.metric("Assistant Responses", assistant_messages)
         with col1b:
             st.metric("Total Conversation", total_conversation_messages)
-            # Show conversation balance
+            # Show conversation balance with smaller font
             if user_messages > 0:
                 balance_ratio = assistant_messages / user_messages
                 balance_status = "🟢 Balanced" if abs(balance_ratio - 1.0) < 0.1 else "🟡 Pending" if balance_ratio < 1.0 else "🔴 Unbalanced"
-                st.metric("Conversation Balance", balance_status)
+                
+                # Use custom styled display instead of st.metric for smaller text
+                st.markdown("""
+                <div style="background-color: #2D3748; padding: 0.75rem; border-radius: 6px; border: 1px solid #4A5568;">
+                    <div style="font-size: 0.9rem; color: #CBD5E0; font-weight: 500; margin-bottom: 0.25rem;">Conversation Balance</div>
+                    <div style="font-size: 1rem; color: #E2E8F0; font-weight: 500;">{}</div>
+                </div>
+                """.format(balance_status), unsafe_allow_html=True)
         st.metric("Query History", len(st.session_state.get('query_history', [])))
         
         # System Configuration Status

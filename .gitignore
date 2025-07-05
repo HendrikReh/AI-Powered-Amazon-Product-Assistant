@@ -12,3 +12,4 @@ __pycache__
 /data
 /src/rag/__pycache__
 *.log
+test_ragas_report.html

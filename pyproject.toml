@@ -1,6 +1,6 @@
 [project]
 name = "ai-powered-amazon-product-assistant"
-version = "0.9.0"
+version = "0.10.0"
 description = "An end-to-end AI engineering project that builds an intelligent product recommendation and analysis system using Amazon Electronics dataset with RAG, multi-provider LLM support, and comprehensive tracing."
 readme = "README.md"
 authors = [
@@ -13,6 +13,9 @@ dependencies = [
     "groq",
     "ipykernel>=6.29.5",
     "jupyter>=1.1.1",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-core>=0.3.0",
     "matplotlib>=3.10.3",
     "numpy>=2.3.1",
     "ollama",
@@ -21,6 +24,8 @@ dependencies = [
     "plotly>=6.2.0",
     "pydantic",
     "pydantic-settings",
+    "ragas>=0.2.15",
+    "rapidfuzz",
     "seaborn>=0.13.2",
     "sentence-transformers>=3.0.0",
     "streamlit",

@@ -47,35 +47,47 @@ uv run jupyter notebook notebooks/data_preprocessing.ipynb
 # Run visualization notebooks  
 uv run jupyter notebook notebooks/data_visualization.ipynb
 
-# Test RAG system functionality (auto-detects local vs Docker implementation)
-uv run python test_rag_system.py
+# Test RAG system functionality (legacy - preserved for reference)
+uv run python legacy_test_rag_system.py
 
 # Initialize vector database manually (local development with GTE-large)
 uv run python src/rag/vector_db.py
 ```
 
-### Evaluation & Testing
+### Ragas-Based Evaluation & Testing (NEW)
 ```bash
-# Create evaluation dataset with ground truth examples
-uv run python run_evaluation.py --create-dataset
+# Generate ragas test dataset from RAG documents (requires OpenAI API key)
+uv run python scripts/generate_ragas_dataset.py --test-size 50
 
-# Run single query evaluation for testing
-uv run python run_evaluation.py --single-query "What are iPhone charger features?" --mock-llm
+# Run single query evaluation with ragas metrics
+uv run python run_ragas_evaluation.py --single-query "What are iPhone charger features?"
 
-# Run full RAG system evaluation using Weave
-uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+# Run full ragas evaluation with HTML report
+uv run python run_ragas_evaluation.py --dataset-path "data/evaluation/rag_evaluation_dataset.json"
 
-# Run evaluation with custom dataset
-uv run python run_evaluation.py --dataset-path "data/evaluation/custom_dataset.json" --mock-llm
+# Generate custom test dataset size
+uv run python run_ragas_evaluation.py --generate-dataset --test-size 100
 
-# Generate and evaluate synthetic test data
-uv run python run_synthetic_evaluation.py --synthetic-only --num-synthetic 50
+# Run evaluation with specific output format
+uv run python run_ragas_evaluation.py --report-format html --output-dir "data/evaluation/results"
 
-# Create mixed dataset (original + synthetic)
-uv run python run_synthetic_evaluation.py --mixed-dataset --save-datasets
+# Ragas metrics include:
+# - faithfulness: Factual accuracy of generated answers
+# - answer_relevancy: How relevant answers are to questions  
+# - context_precision: Quality of retrieved contexts
+# - context_recall: Coverage of relevant information
+```
 
-# Run synthetic data examples and demonstrations
-uv run python examples/synthetic_data_examples.py
+### Legacy Evaluation & Testing (ARCHIVED)
+```bash
+# Legacy custom evaluation system (archived in src/evaluation/legacy/)
+uv run python legacy_run_evaluation.py --create-dataset
+uv run python legacy_run_evaluation.py --single-query "What are iPhone charger features?" --mock-llm
+uv run python legacy_run_evaluation.py --mock-llm --project-name "rag-evaluation"
+
+# Legacy synthetic data generation  
+uv run python legacy_run_synthetic_evaluation.py --synthetic-only --num-synthetic 50
+uv run python legacy_run_synthetic_evaluation.py --mixed-dataset --save-datasets
 ```
 
 ### Docker Operations
@@ -217,59 +229,59 @@ else:
 Run the data processing notebooks to verify the pipeline:
 ```bash
 uv run jupyter notebook notebooks/verify_api_keys.ipynb  # Test API configuration
-uv run python test_rag_system.py  # Comprehensive RAG system testing
+uv run python legacy_test_rag_system.py  # Legacy RAG system testing (preserved for reference)
 ```
 
-### RAG System Evaluation
-The project includes a comprehensive evaluation framework using Weave for systematic testing:
+### Ragas-Based RAG System Evaluation (NEW)
+The project uses industry-standard ragas framework for comprehensive RAG evaluation:
 ```bash
-# Create evaluation dataset (14 examples across query types)
-uv run python run_evaluation.py --create-dataset
+# Generate test dataset from RAG documents (requires OpenAI API key)
+uv run python scripts/generate_ragas_dataset.py --test-size 50
 
-# Quick single query test
-uv run python run_evaluation.py --single-query "Your test query" --mock-llm
+# Quick single query test with ragas metrics
+uv run python run_ragas_evaluation.py --single-query "What are iPhone charger features?"
 
-# Full evaluation with Weave integration
-uv run python run_evaluation.py --mock-llm --project-name "rag-evaluation"
+# Full evaluation with HTML report generation
+uv run python run_ragas_evaluation.py --dataset-path "data/evaluation/rag_evaluation_dataset.json"
+
+# Generate larger test datasets
+uv run python run_ragas_evaluation.py --generate-dataset --test-size 100
 ```
 
-### Synthetic Test Data Generation
-The project includes advanced synthetic data generation for comprehensive testing:
+**Ragas Evaluation Metrics:**
+- **Faithfulness**: Factual accuracy of generated answers based on retrieved contexts
+- **Answer Relevancy**: How relevant and appropriate answers are to the input questions
+- **Context Precision**: Quality and accuracy of retrieved contexts for the given question
+- **Context Recall**: Coverage of relevant information from the ground truth in retrieved contexts
+- **Context Utilization**: How well the model uses the provided context information
+- **Answer Correctness**: Overall correctness combining semantic and factual accuracy
+
+**Ragas Benefits:**
+- **Industry Standard**: Benchmarkable against other RAG systems
+- **Automated Test Generation**: Creates diverse test cases from your document corpus
+- **Professional Reports**: HTML reports with visualizations and insights
+- **Research-Backed**: Metrics validated through academic research
+- **Comprehensive Coverage**: Evaluates both retrieval and generation quality
+
+### Legacy Evaluation Framework (ARCHIVED)
+The original custom evaluation system is preserved in `src/evaluation/legacy/`:
 ```bash
-# Generate synthetic-only evaluation
-uv run python run_synthetic_evaluation.py --synthetic-only --num-synthetic 30
+# Legacy custom evaluation (archived but functional)
+uv run python legacy_run_evaluation.py --create-dataset
+uv run python legacy_run_evaluation.py --single-query "Your test query" --mock-llm
+uv run python legacy_run_evaluation.py --mock-llm --project-name "rag-evaluation"
 
-# Create mixed dataset (original + synthetic)
-uv run python run_synthetic_evaluation.py --mixed-dataset --save-datasets
-
-# Custom difficulty distribution
-uv run python run_synthetic_evaluation.py --difficulty-easy 0.2 --difficulty-hard 0.4
-
-# Run comprehensive examples
-uv run python examples/synthetic_data_examples.py
+# Legacy synthetic data generation
+uv run python legacy_run_synthetic_evaluation.py --synthetic-only --num-synthetic 30
+uv run python legacy_run_synthetic_evaluation.py --mixed-dataset --save-datasets
 ```
 
-**Evaluation Metrics:**
+**Legacy Metrics (for reference):**
 - **Relevance**: Topic coverage and query alignment (0-1 score)
 - **Accuracy**: Factual correctness and product mention accuracy
 - **Completeness**: Response depth and length appropriateness
 - **Factuality**: Contradiction detection and numerical claim verification
 - **Quality**: Clarity, helpfulness, and coherence assessment
-
-**Dataset Coverage:**
-- 14 evaluation examples across 6 query types
-- Difficulties: Easy (3), Medium (6), Hard (5)
-- Query types: product_info, product_reviews, product_complaints, product_comparison, product_recommendation, use_case
-
-### Synthetic Data Generation Framework
-Advanced synthetic test data creation with multiple techniques:
-- **Template-Based Generation**: 6 query types across 10 product categories
-- **Variation Techniques**: Rephrase, specificity, context, perspective transformations
-- **Quality Analysis**: Uniqueness, length distribution, topic coverage validation
-- **Weave Integration**: Full traceability and metadata tracking
-- **Mixed Datasets**: Combine original and synthetic for robust testing
-- **Configurable Parameters**: Difficulty distribution, query type weights, generation methods
-- **Best Practices**: Automated quality validation and comparative analysis
 
 ## RAG Query Examples
 The system handles various query types with intelligent context retrieval:
@@ -331,6 +343,16 @@ The system handles various query types with intelligent context retrieval:
 - Updated code management workflow to include README.md and PROJECT_CANVAS.md updates alongside CLAUDE.md
 - Ensured consistent memory tracking across project documentation files
 - Comprehensive Sprint 1 documentation reflecting Enhanced Tracing v2.0 achievements
+
+### Ragas Evaluation Migration (Sprint 2)
+- **Complete Framework Replacement**: Migrated from custom evaluation to industry-standard ragas framework
+- **Industry-Standard Metrics**: Implemented faithfulness, answer_relevancy, context_precision, context_recall
+- **Automated Test Generation**: Added ragas TestsetGenerator for creating diverse test cases from RAG documents
+- **Professional Reporting**: HTML reports with visualizations, insights, and recommendations
+- **Backward Compatibility**: Preserved legacy evaluation system in `src/evaluation/legacy/` for reference
+- **Enhanced Architecture**: Created RAG adapter layer for seamless ragas integration
+- **Documentation Update**: Updated CLAUDE.md with new ragas commands and workflows
+- **Research-Backed Evaluation**: Leveraging academic research-validated metrics for RAG assessment
 
 ### UI/UX Design
 - The Streamlit app follows professional UX typography standards with a clear visual hierarchy that guides users naturally through the interface
